@@ -2,9 +2,9 @@
 {
     public class User
     {
-		private int _Id;
+		private string _Id;
 
-		public int Id
+		public string Id
 		{
 			get { return _Id; }
 			set { _Id = value; }
@@ -55,6 +55,14 @@
 		{
 			get { return _AccessToken; }
 			set { _AccessToken = value; }
+		}
+
+		private string _Role;
+
+		public string Role
+		{
+			get { return _Role; }
+			set { _Role = value; }
 		}
 
 	}

@@ -2,10 +2,7 @@
 using API.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
+using WebApplication1.Models;
 
 namespace API.Controllers
 {
@@ -21,7 +18,7 @@ namespace API.Controllers
             _userRepository = new UserRepository(new Data.DBConnection(), configuration);
         }
 
-        [Authorize]
+        [Authorize("Admin")]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<User>>> GetAllUser()
         {
@@ -44,17 +41,76 @@ namespace API.Controllers
                 User user = await _userRepository.Login(login);
                 if (user == null)
                 {
-                    return BadRequest("Invalid");
+                    return Ok(new APIResponse
+                    {
+                        Success = false,
+                        Message = "Wrong username or password"
+                    });
                 }
                 else
                 {
-                    user.AccessToken = await _userRepository.GetToken(user);
-                    return Ok(user);
+                    var refreshToken = new RefreshToken
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        User = user,
+                        RefreshTokenn = _userRepository.GenerateRefreshToken(),
+                        Expire = DateTime.UtcNow.AddDays(7),
+                    };
+                    _userRepository.SaveRefreshToken(refreshToken);
+                    user.AccessToken = _userRepository.GetToken(user);
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Message = "Login Success",
+                        Data = user
+                    });
                 }
             }
             catch (Exception ex)
             {
                 return BadRequest(ex);
+            }
+        }
+
+        [HttpPost("Signin")]
+        public async Task<IActionResult> Signin(User user)
+        {
+            try
+            {
+                _userRepository.Signin(user);
+                return Ok(user);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost("GetRefreshToken")]
+        public async Task<IActionResult> GetRefreshToken(string IdUser)
+        {
+            try
+            {
+                string token = _userRepository.GetRefreshToken(IdUser);
+                return Ok(token);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost("RenewToken")]
+        public async Task<IActionResult> RenewToken(string refreshToken)
+        {
+            try
+            {
+                string token = _userRepository.RenewToken(refreshToken);
+                return Ok(token);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
             }
         }
     }

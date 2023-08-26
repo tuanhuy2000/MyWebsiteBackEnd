@@ -2,8 +2,10 @@
 using API.Model;
 using Microsoft.IdentityModel.Tokens;
 using MySqlConnector;
+using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace API.Repositories
@@ -39,21 +41,15 @@ namespace API.Repositories
                 {
                     while (reader.Read())
                     {
-                        var id = reader.GetInt32(0);
+                        var id = reader.GetString(0);
                         //var name = reader["Name"];
                         var name = reader.GetString(1);
                         var phoneNumber = reader.GetString("PhoneNumber");
                         var email = reader.GetString(3);
-                        var userName = reader.GetString(4);
-                        var password = reader.GetString(5);
-                        User user = new User { Id = id, Name = name, PhoneNumber = phoneNumber, Email = email, UserName = userName, Password = password };
+                        var role = reader.GetString(6);
+                        User user = new User { Id = id, Name = name, PhoneNumber = phoneNumber, Email = email, Role = role };
                         users.Add(user);
                     }
-                }
-                else
-                {
-                    connect.Close();
-                    return users;
                 }
             }
             catch (Exception ex)
@@ -87,14 +83,15 @@ namespace API.Repositories
                 {
                     while (reader.Read())
                     {
-                        var id = reader.GetInt32(0);
+                        var id = reader.GetString(0);
                         //var name = reader["Name"];
                         var name = reader.GetString(1);
                         var phoneNumber = reader.GetString("PhoneNumber");
                         var email = reader.GetString(3);
                         var userName = reader.GetString(4);
                         var Password = reader.GetString(5);
-                        userLogin = new User { Id = id, Name = name, PhoneNumber = phoneNumber, Email = email, UserName = userName, Password = Password };
+                        var Role = reader.GetString(6);
+                        userLogin = new User { Id = id, Name = name, PhoneNumber = phoneNumber, Email = email, UserName = userName, Password = Password, Role = Role };
                         break;
                     }
                 }
@@ -113,14 +110,16 @@ namespace API.Repositories
             return userLogin;
         }
 
-        public async Task<string> GetToken(User user)
+        public string GetToken(User user)
         {
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Jti,Guid.NewGuid().ToString() ),
                 new Claim("UserId",user.Id.ToString()),
                 new Claim("Name",user.Name),
-                new Claim("Email",user.Email)
+                new Claim("Email",user.Email),
+                //role
+                new Claim(ClaimTypes.Role,user.Role)
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
@@ -129,10 +128,190 @@ namespace API.Repositories
                 _configuration["Jwt:Issuer"],
                 _configuration["Jwt:Audience"],
                 claims,
-                expires: DateTime.UtcNow.AddMinutes(3),
+                expires: DateTime.UtcNow.AddMinutes(6),
                 signingCredentials: signIn
                 );
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        public string GenerateRefreshToken()
+        {
+            var random = new byte[32];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(random);
+
+                return Convert.ToBase64String(random);
+            }
+        }
+
+        public void SaveRefreshToken(RefreshToken refreshToken)
+        {
+            MySqlConnection connect = conn.ConnectDB();
+            try
+            {
+                connect.Open();
+                var sql = new MySqlCommand();
+                sql.Connection = connect;
+                string queryString = "SELECT * FROM tbl_refreshtoken WHERE IdUser = @IdUser";
+                sql.Parameters.AddWithValue("@IdUser", refreshToken.User.Id);
+                sql.CommandText = queryString;
+                using var reader = sql.ExecuteReader();
+                if (reader.HasRows)
+                {
+                    connect.Close();
+                    connect.Open();
+                    sql.CommandText = "UPDATE tbl_refreshtoken SET RefreshToken = @RefreshToken , Expire = @Expire WHERE IdUser = @IdU";
+                    sql.Parameters.AddWithValue("@IdU", refreshToken.User.Id);
+                    sql.Parameters.AddWithValue("@RefreshToken", refreshToken.RefreshTokenn);
+                    sql.Parameters.AddWithValue("@Expire", refreshToken.Expire.ToString("yyyy-MM-dd HH:mm:ss"));
+                    sql.ExecuteNonQuery();
+                    connect.Close();
+                }
+                else
+                {
+                    connect.Close();
+                    connect.Open();
+                    sql.CommandText = "INSERT INTO tbl_refreshtoken (Id, IdUser, RefreshToken, Expire) VALUES (@Id, @UserId, @RefreshToken, @Expire)";
+                    sql.Parameters.AddWithValue("@Id", refreshToken.Id);
+                    sql.Parameters.AddWithValue("@UserId", refreshToken.User.Id);
+                    sql.Parameters.AddWithValue("@RefreshToken", refreshToken.RefreshTokenn);
+                    sql.Parameters.AddWithValue("@Expire", refreshToken.Expire.ToString("yyyy-MM-dd HH:mm:ss"));
+                    sql.ExecuteNonQuery();
+                    connect.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                connect.Close();
+            }
+        }
+
+        public void Signin(User user)
+        {
+            MySqlConnection connect = conn.ConnectDB();
+            try
+            {
+                connect.Open();
+                MySqlCommand sql = new MySqlCommand();
+                sql.Connection = connect;
+                sql.CommandText = "INSERT INTO tbl_user (Id, Name, PhoneNumber, Email, UserName, Password, Role) VALUES (@Id, @Name, @PhoneNumber, @Email, @UserName, @Password, @Role)";
+                sql.Parameters.AddWithValue("@Id", user.Id);
+                sql.Parameters.AddWithValue("@Name", user.Name);
+                sql.Parameters.AddWithValue("@PhoneNumber", user.PhoneNumber);
+                sql.Parameters.AddWithValue("@Email", user.Email);
+                sql.Parameters.AddWithValue("@UserName", user.UserName);
+                sql.Parameters.AddWithValue("@Password", user.Password);
+                sql.Parameters.AddWithValue("@Role", user.Role);
+                sql.ExecuteNonQuery();
+                connect.Close();
+            }
+            catch (Exception ex)
+            {
+                connect.Close();
+            }
+        }
+
+        public string GetRefreshToken(string IdUser)
+        {
+            MySqlConnection connect = conn.ConnectDB();
+            string token = null;
+            try
+            {
+                connect.Open();
+                var command = new MySqlCommand();
+                command.Connection = connect;
+                string queryString = "SELECT RefreshToken FROM tbl_refreshtoken WHERE IdUser = @IdUser";
+                command.Parameters.AddWithValue("@IdUser", IdUser);
+                command.CommandText = queryString;
+                using var reader = command.ExecuteReader();
+                if (reader.HasRows)
+                {
+                    while (reader.Read())
+                    {
+                        token = reader.GetString(0);
+                        break;
+                    }
+                }
+                else
+                {
+                    connect.Close();
+                    return token;
+                }
+            }
+            catch (Exception ex)
+            {
+                connect.Close();
+                return token;
+            }
+            connect.Close();
+            return token;
+        }
+
+        public string RenewToken(string RefreshToken)
+        {
+            MySqlConnection connect = conn.ConnectDB();
+            DateTime expire = new DateTime(1, 1, 1);
+            string IdUser = null;
+            string newToken = null;
+            try
+            {
+                connect.Open();
+                var command = new MySqlCommand();
+                command.Connection = connect;
+                string queryString = "SELECT IdUser, Expire FROM tbl_refreshtoken WHERE RefreshToken = @RefreshToken";
+                command.Parameters.AddWithValue("@RefreshToken", RefreshToken);
+                command.CommandText = queryString;
+                using var reader = command.ExecuteReader();
+                if (reader.HasRows)
+                {
+                    while (reader.Read())
+                    {
+                        IdUser = reader.GetString(0);
+                        expire = reader.GetDateTime(1);
+                        break;
+                    }
+                }
+                if (DateTime.UtcNow < expire)
+                {
+                    User user = null;
+                    try
+                    {
+                        connect.Close();
+                        connect.Open();
+                        string query = "SELECT * FROM tbl_user WHERE Id = @Id";
+                        command.Parameters.AddWithValue("@Id", IdUser);
+                        command.CommandText = query;
+                        using var read = command.ExecuteReader();
+                        if (read.HasRows)
+                        {
+                            while (read.Read())
+                            {
+                                var id = read.GetString(0);
+                                //var name = reader["Name"];
+                                var name = read.GetString(1);
+                                var phoneNumber = read.GetString("PhoneNumber");
+                                var email = read.GetString(3);
+                                var role = read.GetString(6);
+                                user = new User { Id = id, Name = name, PhoneNumber = phoneNumber, Email = email, Role = role };
+                            }
+                        }
+                        newToken = GetToken(user);
+                    }
+                    catch (Exception ex)
+                    {
+                        connect.Close();
+                        return newToken;
+                    }
+                }
+                connect.Close();
+                return newToken;
+            }
+            catch (Exception ex)
+            {
+                connect.Close();
+                return newToken;
+            }
         }
     }
 }
