@@ -1,4 +1,6 @@
+using API.Model;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
@@ -27,10 +29,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
     };
 });
 
+
+
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("Admin", policy => policy.RequireRole("AdminRole"));
+    options.AddPolicy("User", policy => policy.RequireRole("AdminRole", "UserRole"));
 });
+
+//builder.Services.AddSingleton<
+//    IAuthorizationMiddlewareResultHandler, SampleAuthorizationMiddlewareResultHandler>();
 
 var app = builder.Build();
 

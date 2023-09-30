@@ -2,6 +2,8 @@
 using API.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using System.Net;
 using WebApplication1.Models;
 
 namespace API.Controllers
@@ -30,6 +32,21 @@ namespace API.Controllers
             catch (Exception ex)
             {
                 return BadRequest();
+            }
+        }
+
+        [Authorize("Admin")]
+        [HttpGet("pageUser")]
+        public async Task<ActionResult<Page>> GetUserPage(int pageNum, int perPage, string direction)
+        {
+            try
+            {
+                Page page = await _userRepository.GetPageUsersAsync(pageNum, perPage, direction);
+                return page;
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex);
             }
         }
 
@@ -73,7 +90,7 @@ namespace API.Controllers
         }
 
         [HttpPost("Signin")]
-        public async Task<IActionResult> Signin(User user)
+        public IActionResult Signin(User user)
         {
             try
             {
@@ -91,7 +108,7 @@ namespace API.Controllers
         {
             try
             {
-                string token = _userRepository.GetRefreshToken(IdUser);
+                string token = await _userRepository.GetRefreshToken(IdUser);
                 return Ok(token);
             }
             catch (Exception ex)
@@ -105,8 +122,38 @@ namespace API.Controllers
         {
             try
             {
-                string token = _userRepository.RenewToken(refreshToken);
+                string token = await _userRepository.RenewToken(refreshToken);
                 return Ok(token);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [Authorize("User")]
+        [HttpPost("GetRole")]
+        public async Task<IActionResult> GetRole(string id)
+        {
+            try
+            {
+                string role = await _userRepository.GetRoleById(id);
+                return Ok(role);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [Authorize("Admin")]
+        [HttpDelete("DeleteUser")]
+        public IActionResult DeleteUser(string id)
+        {
+            try
+            {
+                _userRepository.DeleteUserById(id);
+                return Ok();
             }
             catch (Exception ex)
             {
