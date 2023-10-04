@@ -20,33 +20,51 @@ namespace API.Controllers
             _userRepository = new UserRepository(new Data.DBConnection(), configuration);
         }
 
-        [Authorize("Admin")]
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<User>>> GetAllUser()
-        {
-            try
-            {
-                List<User> users = await _userRepository.GetAllUsersAsync();
-                return users;
-            }
-            catch (Exception ex)
-            {
-                return BadRequest();
-            }
-        }
+        //[Authorize("Admin")]
+        //[HttpGet]
+        //public async Task<ActionResult<IEnumerable<User>>> GetAllUser()
+        //{
+        //    try
+        //    {
+        //        List<User> users = await _userRepository.GetAllUsersAsync();
+        //        return users;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return BadRequest();
+        //    }
+        //}
 
-        [Authorize("Admin")]
-        [HttpGet("pageUser")]
-        public async Task<ActionResult<Page>> GetUserPage(int pageNum, int perPage, string direction)
+        [HttpPost("Signin")]
+        public IActionResult Signin(User user)
         {
             try
             {
-                Page page = await _userRepository.GetPageUsersAsync(pageNum, perPage, direction);
-                return page;
+                int result = _userRepository.Signin(user);
+                if (result == 1)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Message = "Signin success"
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "Signin fail"
+                    });
+                }
             }
             catch (Exception ex)
             {
-                return BadRequest(ex);
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
             }
         }
 
@@ -58,7 +76,7 @@ namespace API.Controllers
                 User user = await _userRepository.Login(login);
                 if (user == null)
                 {
-                    return Ok(new APIResponse
+                    return Accepted(new APIResponse
                     {
                         Success = false,
                         Message = "Wrong username or password"
@@ -73,8 +91,19 @@ namespace API.Controllers
                         RefreshTokenn = _userRepository.GenerateRefreshToken(),
                         Expire = DateTime.UtcNow.AddDays(7),
                     };
-                    _userRepository.SaveRefreshToken(refreshToken);
-                    user.AccessToken = _userRepository.GetToken(user);
+                    int result = _userRepository.SaveRefreshToken(refreshToken);
+                    if (result == 1)
+                    {
+                        user.AccessToken = _userRepository.GetToken(user);
+                    }
+                    else
+                    {
+                        return Accepted(new APIResponse
+                        {
+                            Success = false,
+                            Message = "Save RefreshToken fail"
+                        });
+                    }
                     return Ok(new APIResponse
                     {
                         Success = true,
@@ -85,35 +114,79 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(ex);
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
             }
         }
 
-        [HttpPost("Signin")]
-        public IActionResult Signin(User user)
-        {
-            try
-            {
-                _userRepository.Signin(user);
-                return Ok(user);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
-
+        [Authorize("User")]
         [HttpPost("GetRefreshToken")]
         public async Task<IActionResult> GetRefreshToken(string IdUser)
         {
             try
             {
                 string token = await _userRepository.GetRefreshToken(IdUser);
-                return Ok(token);
+                if (token != null)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Data = token
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "Get RefreshToken fail"
+                    });
+                }
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
+
+        [Authorize("Admin")]
+        [HttpGet("pageUser")]
+        public async Task<ActionResult<Page>> GetUserPage(int pageNum, int perPage, string direction)
+        {
+            try
+            {
+                Page page = await _userRepository.GetPageUsersAsync(pageNum, perPage, direction);
+                if (page != null)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Data = page
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "Cann't get users"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
             }
         }
 
@@ -123,26 +196,64 @@ namespace API.Controllers
             try
             {
                 string token = await _userRepository.RenewToken(refreshToken);
-                return Ok(token);
+                if (token != null)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Data = token
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "Renew token fail"
+                    });
+                }
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
             }
         }
 
         [Authorize("User")]
-        [HttpPost("GetRole")]
-        public async Task<IActionResult> GetRole(string id)
+        [HttpPost("GetUserByRefreshToken")]
+        public async Task<IActionResult> GetUserByRefreshToken(string token)
         {
             try
             {
-                string role = await _userRepository.GetRoleById(id);
-                return Ok(role);
+                User user = await _userRepository.GetUserByRefreshToken(token);
+                if (user == null)
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "Get user by refresh token fail"
+                    });
+                }
+                else
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Data = user
+                    });
+                }
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
             }
         }
 
@@ -152,12 +263,99 @@ namespace API.Controllers
         {
             try
             {
-                _userRepository.DeleteUserById(id);
-                return Ok();
+                int result = _userRepository.DeleteUserById(id);
+                if (result == 1)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Message = "Delete success"
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "Delete fail"
+                    });
+                }
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
+
+        [Authorize("User")]
+        [HttpPost("ChangePassword")]
+        public IActionResult ChangePassword(string id, string pass, string newPass)
+        {
+            try
+            {
+                int result = _userRepository.ChangePasswordById(id, pass, newPass);
+                if (result == 1)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Message = "Change password success"
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "Password wrong"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
+
+        [Authorize("User")]
+        [HttpPut("ChangeInfor")]
+        public IActionResult ChangeUserInfor(User user)
+        {
+            try
+            {
+                int result = _userRepository.ChangeUserInfor(user);
+                if (result == 1)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Message = "Change user infor success"
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "Change user infor fail"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
             }
         }
     }

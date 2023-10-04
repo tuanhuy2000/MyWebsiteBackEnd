@@ -22,9 +22,76 @@ namespace API.Repositories
             _configuration = configuration;
         }
 
-        public async Task<List<User>> GetAllUsersAsync()
+        //public async Task<List<User>> GetAllUsersAsync()
+        //{
+        //    List<User> users = new List<User>();
+        //    MySqlConnection connect = conn.ConnectDB();
+        //    try
+        //    {
+        //        connect.Open();
+
+        //        var command = new MySqlCommand();
+        //        command.Connection = connect;
+
+        //        string queryString = "SELECT * FROM tbl_user";
+        //        command.CommandText = queryString;
+
+        //        await using var reader = command.ExecuteReader();
+
+        //        if (reader.HasRows)
+        //        {
+        //            while (reader.Read())
+        //            {
+        //                var id = reader.GetString(0);
+        //                //var name = reader["Name"];
+        //                var name = reader.GetString(1);
+        //                var phoneNumber = reader.GetString("PhoneNumber");
+        //                var email = reader.GetString(3);
+        //                var role = reader.GetString(6);
+        //                User user = new User { Id = id, Name = name, PhoneNumber = phoneNumber, Email = email, Role = role };
+        //                users.Add(user);
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        connect.Close();
+        //        return users;
+        //    }
+        //    connect.Close();
+        //    return users;
+        //}
+
+        public int Signin(User user)
         {
-            List<User> users = new List<User>();
+            MySqlConnection connect = conn.ConnectDB();
+            try
+            {
+                connect.Open();
+                MySqlCommand sql = new MySqlCommand();
+                sql.Connection = connect;
+                sql.CommandText = "INSERT INTO tbl_user (Id, Name, PhoneNumber, Email, UserName, Password, Role) VALUES (@Id, @Name, @PhoneNumber, @Email, @UserName, @Password, @Role)";
+                sql.Parameters.AddWithValue("@Id", user.Id);
+                sql.Parameters.AddWithValue("@Name", user.Name);
+                sql.Parameters.AddWithValue("@PhoneNumber", user.PhoneNumber);
+                sql.Parameters.AddWithValue("@Email", user.Email);
+                sql.Parameters.AddWithValue("@UserName", user.UserName);
+                sql.Parameters.AddWithValue("@Password", user.Password);
+                sql.Parameters.AddWithValue("@Role", user.Role);
+                int result = sql.ExecuteNonQuery();
+                connect.Close();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                connect.Close();
+                return 0;
+            }
+        }
+
+        public async Task<User> Login(Login login)
+        {
+            User userLogin = null;
             MySqlConnection connect = conn.ConnectDB();
             try
             {
@@ -33,7 +100,9 @@ namespace API.Repositories
                 var command = new MySqlCommand();
                 command.Connection = connect;
 
-                string queryString = "SELECT * FROM tbl_user";
+                string queryString = "SELECT * FROM tbl_user WHERE UserName = @username AND Password = @password";
+                command.Parameters.AddWithValue("@username", login.UserName);
+                command.Parameters.AddWithValue("@password", login.Password);
                 command.CommandText = queryString;
 
                 await using var reader = command.ExecuteReader();
@@ -43,23 +112,143 @@ namespace API.Repositories
                     while (reader.Read())
                     {
                         var id = reader.GetString(0);
-                        //var name = reader["Name"];
                         var name = reader.GetString(1);
                         var phoneNumber = reader.GetString("PhoneNumber");
                         var email = reader.GetString(3);
-                        var role = reader.GetString(6);
-                        User user = new User { Id = id, Name = name, PhoneNumber = phoneNumber, Email = email, Role = role };
-                        users.Add(user);
+                        var Role = reader.GetString(6);
+                        userLogin = new User { Id = id, Name = name, PhoneNumber = phoneNumber, Email = email, Role = Role };
+                        break;
                     }
+                }
+                else
+                {
+                    connect.Close();
+                    return userLogin;
                 }
             }
             catch (Exception ex)
             {
                 connect.Close();
-                return users;
+                return null;
             }
             connect.Close();
-            return users;
+            return userLogin;
+        }
+
+        public string GenerateRefreshToken()
+        {
+            var random = new byte[32];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(random);
+
+                return Convert.ToBase64String(random);
+            }
+        }
+
+        public int SaveRefreshToken(RefreshToken refreshToken)
+        {
+            MySqlConnection connect = conn.ConnectDB();
+            try
+            {
+                connect.Open();
+                var sql = new MySqlCommand();
+                sql.Connection = connect;
+                string queryString = "SELECT * FROM tbl_refreshtoken WHERE IdUser = @IdUser";
+                sql.Parameters.AddWithValue("@IdUser", refreshToken.User.Id);
+                sql.CommandText = queryString;
+                using var reader = sql.ExecuteReader();
+                if (reader.HasRows)
+                {
+                    connect.Close();
+                    connect.Open();
+                    sql.CommandText = "UPDATE tbl_refreshtoken SET RefreshToken = @RefreshToken , Expire = @Expire WHERE IdUser = @IdU";
+                    sql.Parameters.AddWithValue("@IdU", refreshToken.User.Id);
+                    sql.Parameters.AddWithValue("@RefreshToken", refreshToken.RefreshTokenn);
+                    sql.Parameters.AddWithValue("@Expire", refreshToken.Expire.ToString("yyyy-MM-dd HH:mm:ss"));
+                    int result = sql.ExecuteNonQuery();
+                    connect.Close();
+                    return result;
+                }
+                else
+                {
+                    connect.Close();
+                    connect.Open();
+                    sql.CommandText = "INSERT INTO tbl_refreshtoken (Id, IdUser, RefreshToken, Expire) VALUES (@Id, @UserId, @RefreshToken, @Expire)";
+                    sql.Parameters.AddWithValue("@Id", refreshToken.Id);
+                    sql.Parameters.AddWithValue("@UserId", refreshToken.User.Id);
+                    sql.Parameters.AddWithValue("@RefreshToken", refreshToken.RefreshTokenn);
+                    sql.Parameters.AddWithValue("@Expire", refreshToken.Expire.ToString("yyyy-MM-dd HH:mm:ss"));
+                    int result = sql.ExecuteNonQuery();
+                    connect.Close();
+                    return result;
+                }
+            }
+            catch (Exception ex)
+            {
+                connect.Close();
+                return 0;
+            }
+        }
+
+        public string GetToken(User user)
+        {
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Jti,Guid.NewGuid().ToString() ),
+                new Claim("UserId",user.Id.ToString()),
+                new Claim("Name",user.Name),
+                new Claim("Email",user.Email),
+                //role
+                new Claim(ClaimTypes.Role,user.Role)
+            };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+            var signIn = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            var token = new JwtSecurityToken(
+                _configuration["Jwt:Issuer"],
+                _configuration["Jwt:Audience"],
+                claims,
+                expires: DateTime.UtcNow.AddSeconds(10),
+                signingCredentials: signIn
+                );
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        public async Task<string> GetRefreshToken(string IdUser)
+        {
+            MySqlConnection connect = conn.ConnectDB();
+            string token = null;
+            try
+            {
+                connect.Open();
+                var command = new MySqlCommand();
+                command.Connection = connect;
+                string queryString = "SELECT RefreshToken FROM tbl_refreshtoken WHERE IdUser = @IdUser";
+                command.Parameters.AddWithValue("@IdUser", IdUser);
+                command.CommandText = queryString;
+                await using var reader = command.ExecuteReader();
+                if (reader.HasRows)
+                {
+                    while (reader.Read())
+                    {
+                        token = reader.GetString(0);
+                        break;
+                    }
+                }
+                else
+                {
+                    connect.Close();
+                    return token;
+                }
+            }
+            catch (Exception ex)
+            {
+                connect.Close();
+                return null;
+            }
+            connect.Close();
+            return token;
         }
 
         public async Task<Page> GetPageUsersAsync(int pageNum, int perPage, string direction)
@@ -67,7 +256,7 @@ namespace API.Repositories
             List<User> users = new List<User>();
             int total = 0;
             int totalPages = 0;
-            Page page = new Page();
+            Page page = null;
             MySqlConnection connect = conn.ConnectDB();
             MySqlConnection connect1 = conn.ConnectDB();
             try
@@ -120,232 +309,9 @@ namespace API.Repositories
             {
                 connect.Close();
                 connect1.Close();
-                return page;
+                return null;
             }
             return page;
-        }
-
-        public async Task<User> Login(Login login)
-        {
-            User userLogin = null;
-            MySqlConnection connect = conn.ConnectDB();
-            try
-            {
-                connect.Open();
-
-                var command = new MySqlCommand();
-                command.Connection = connect;
-
-                string queryString = "SELECT * FROM tbl_user WHERE UserName = @username AND Password = @password";
-                command.Parameters.AddWithValue("@username", login.UserName);
-                command.Parameters.AddWithValue("@password", login.Password);
-                command.CommandText = queryString;
-
-                await using var reader = command.ExecuteReader();
-
-                if (reader.HasRows)
-                {
-                    while (reader.Read())
-                    {
-                        var id = reader.GetString(0);
-                        //var name = reader["Name"];
-                        var name = reader.GetString(1);
-                        var phoneNumber = reader.GetString("PhoneNumber");
-                        var email = reader.GetString(3);
-                        var userName = reader.GetString(4);
-                        var Password = reader.GetString(5);
-                        var Role = reader.GetString(6);
-                        userLogin = new User { Id = id, Name = name, PhoneNumber = phoneNumber, Email = email, UserName = userName, Password = Password, Role = Role };
-                        break;
-                    }
-                }
-                else
-                {
-                    connect.Close();
-                    return userLogin;
-                }
-            }
-            catch (Exception ex)
-            {
-                connect.Close();
-                return userLogin;
-            }
-            connect.Close();
-            return userLogin;
-        }
-
-        public void Signin(User user)
-        {
-            MySqlConnection connect = conn.ConnectDB();
-            try
-            {
-                connect.Open();
-                MySqlCommand sql = new MySqlCommand();
-                sql.Connection = connect;
-                sql.CommandText = "INSERT INTO tbl_user (Id, Name, PhoneNumber, Email, UserName, Password, Role) VALUES (@Id, @Name, @PhoneNumber, @Email, @UserName, @Password, @Role)";
-                sql.Parameters.AddWithValue("@Id", user.Id);
-                sql.Parameters.AddWithValue("@Name", user.Name);
-                sql.Parameters.AddWithValue("@PhoneNumber", user.PhoneNumber);
-                sql.Parameters.AddWithValue("@Email", user.Email);
-                sql.Parameters.AddWithValue("@UserName", user.UserName);
-                sql.Parameters.AddWithValue("@Password", user.Password);
-                sql.Parameters.AddWithValue("@Role", user.Role);
-                sql.ExecuteNonQuery();
-                connect.Close();
-            }
-            catch (Exception ex)
-            {
-                connect.Close();
-            }
-        }
-
-        public async Task<string> GetRoleById(string id)
-        {
-            MySqlConnection connect = conn.ConnectDB();
-            string role = null;
-            try
-            {
-                connect.Open();
-                var command = new MySqlCommand();
-                command.Connection = connect;
-                string queryString = "SELECT Role FROM tbl_user WHERE Id = @Id";
-                command.Parameters.AddWithValue("@Id", id);
-                command.CommandText = queryString;
-                await using var reader = command.ExecuteReader();
-                if (reader.HasRows)
-                {
-                    while (reader.Read())
-                    {
-                        role = reader.GetString(0);
-                        break;
-                    }
-                }
-                else
-                {
-                    connect.Close();
-                    return role;
-                }
-            }
-            catch (Exception ex)
-            {
-                connect.Close();
-                return role;
-            }
-            connect.Close();
-            return role;
-        }
-
-        public string GetToken(User user)
-        {
-            var claims = new[]
-            {
-                new Claim(JwtRegisteredClaimNames.Jti,Guid.NewGuid().ToString() ),
-                new Claim("UserId",user.Id.ToString()),
-                new Claim("Name",user.Name),
-                new Claim("Email",user.Email),
-                //role
-                new Claim(ClaimTypes.Role,user.Role)
-            };
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
-            var signIn = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            var token = new JwtSecurityToken(
-                _configuration["Jwt:Issuer"],
-                _configuration["Jwt:Audience"],
-                claims,
-                expires: DateTime.UtcNow.AddSeconds(10),
-                signingCredentials: signIn
-                );
-            return new JwtSecurityTokenHandler().WriteToken(token);
-        }
-
-        public string GenerateRefreshToken()
-        {
-            var random = new byte[32];
-            using (var rng = RandomNumberGenerator.Create())
-            {
-                rng.GetBytes(random);
-
-                return Convert.ToBase64String(random);
-            }
-        }
-
-        public void SaveRefreshToken(RefreshToken refreshToken)
-        {
-            MySqlConnection connect = conn.ConnectDB();
-            try
-            {
-                connect.Open();
-                var sql = new MySqlCommand();
-                sql.Connection = connect;
-                string queryString = "SELECT * FROM tbl_refreshtoken WHERE IdUser = @IdUser";
-                sql.Parameters.AddWithValue("@IdUser", refreshToken.User.Id);
-                sql.CommandText = queryString;
-                using var reader = sql.ExecuteReader();
-                if (reader.HasRows)
-                {
-                    connect.Close();
-                    connect.Open();
-                    sql.CommandText = "UPDATE tbl_refreshtoken SET RefreshToken = @RefreshToken , Expire = @Expire WHERE IdUser = @IdU";
-                    sql.Parameters.AddWithValue("@IdU", refreshToken.User.Id);
-                    sql.Parameters.AddWithValue("@RefreshToken", refreshToken.RefreshTokenn);
-                    sql.Parameters.AddWithValue("@Expire", refreshToken.Expire.ToString("yyyy-MM-dd HH:mm:ss"));
-                    sql.ExecuteNonQuery();
-                    connect.Close();
-                }
-                else
-                {
-                    connect.Close();
-                    connect.Open();
-                    sql.CommandText = "INSERT INTO tbl_refreshtoken (Id, IdUser, RefreshToken, Expire) VALUES (@Id, @UserId, @RefreshToken, @Expire)";
-                    sql.Parameters.AddWithValue("@Id", refreshToken.Id);
-                    sql.Parameters.AddWithValue("@UserId", refreshToken.User.Id);
-                    sql.Parameters.AddWithValue("@RefreshToken", refreshToken.RefreshTokenn);
-                    sql.Parameters.AddWithValue("@Expire", refreshToken.Expire.ToString("yyyy-MM-dd HH:mm:ss"));
-                    sql.ExecuteNonQuery();
-                    connect.Close();
-                }
-            }
-            catch (Exception ex)
-            {
-                connect.Close();
-            }
-        }
-
-        public async Task<string> GetRefreshToken(string IdUser)
-        {
-            MySqlConnection connect = conn.ConnectDB();
-            string token = null;
-            try
-            {
-                connect.Open();
-                var command = new MySqlCommand();
-                command.Connection = connect;
-                string queryString = "SELECT RefreshToken FROM tbl_refreshtoken WHERE IdUser = @IdUser";
-                command.Parameters.AddWithValue("@IdUser", IdUser);
-                command.CommandText = queryString;
-                await using var reader = command.ExecuteReader();
-                if (reader.HasRows)
-                {
-                    while (reader.Read())
-                    {
-                        token = reader.GetString(0);
-                        break;
-                    }
-                }
-                else
-                {
-                    connect.Close();
-                    return token;
-                }
-            }
-            catch (Exception ex)
-            {
-                connect.Close();
-                return token;
-            }
-            connect.Close();
-            return token;
         }
 
         public async Task<string> RenewToken(string RefreshToken)
@@ -401,7 +367,7 @@ namespace API.Repositories
                     catch (Exception ex)
                     {
                         connect.Close();
-                        return newToken;
+                        return null;
                     }
                 }
                 connect.Close();
@@ -410,11 +376,54 @@ namespace API.Repositories
             catch (Exception ex)
             {
                 connect.Close();
-                return newToken;
+                return null;
             }
         }
 
-        public void DeleteUserById(string id)
+        public async Task<User> GetUserByRefreshToken(string refreshToken)
+        {
+            User userLogin = null;
+            MySqlConnection connect = conn.ConnectDB();
+            try
+            {
+                connect.Open();
+                var command = new MySqlCommand();
+                command.Connection = connect;
+                string queryString = "SELECT u.Id, u.Name, u.PhoneNumber, u.Email, u.Role FROM tbl_refreshtoken As r, tbl_user AS u WHERE r.IdUser = u.Id AND r.RefreshToken = @refreshToken";
+                command.Parameters.AddWithValue("@refreshToken", refreshToken);
+                command.CommandText = queryString;
+
+                await using var reader = command.ExecuteReader();
+
+                if (reader.HasRows)
+                {
+                    while (reader.Read())
+                    {
+                        var id = reader.GetString(0);
+                        var name = reader.GetString(1);
+                        var phoneNumber = reader.GetString("PhoneNumber");
+                        var email = reader.GetString(3);
+                        var Role = reader.GetString(4);
+                        userLogin = new User { Id = id, Name = name, PhoneNumber = phoneNumber, Email = email, Role = Role };
+                        break;
+                    }
+                }
+                else
+                {
+                    connect.Close();
+                    return userLogin;
+                }
+            }
+            catch (Exception ex)
+            {
+                connect.Close();
+                return null;
+            }
+            connect.Close();
+            return userLogin;
+        }
+
+        public int DeleteUserById(string id)
         {
             MySqlConnection connect = conn.ConnectDB();
             MySqlConnection connect1 = conn.ConnectDB();
@@ -434,12 +443,64 @@ namespace API.Repositories
                 string queryString1 = "DELETE FROM tbl_user WHERE Id = @Id";
                 sql1.Parameters.AddWithValue("@Id", id);
                 sql1.CommandText = queryString1;
-                sql1.ExecuteNonQuery();
+                int result = sql1.ExecuteNonQuery();
+                connect1.Close();
+                return result;
             }
             catch (Exception ex)
             {
                 connect.Close();
                 connect1.Close();
+                return 0;
+            }
+        }
+
+        public int ChangePasswordById(string id, string password, string newPassword)
+        {
+            MySqlConnection connect = conn.ConnectDB();
+            try
+            {
+                connect.Open();
+                var sql = new MySqlCommand();
+                sql.Connection = connect;
+                string queryString = "UPDATE tbl_user SET Password = @newPassword WHERE Id = @Id AND Password = @password";
+                sql.Parameters.AddWithValue("@Id", id);
+                sql.Parameters.AddWithValue("@newPassword", newPassword);
+                sql.Parameters.AddWithValue("@password", password);
+                sql.CommandText = queryString;
+                int result = sql.ExecuteNonQuery();
+                connect.Close();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                connect.Close();
+                return 0;
+            }
+        }
+
+        public int ChangeUserInfor(User user)
+        {
+            MySqlConnection connect = conn.ConnectDB();
+            try
+            {
+                connect.Open();
+                var sql = new MySqlCommand();
+                sql.Connection = connect;
+                string queryString = "UPDATE tbl_user SET Name = @name, PhoneNumber = @phoneNumber, Email = @email WHERE Id = @Id";
+                sql.Parameters.AddWithValue("@name", user.Name);
+                sql.Parameters.AddWithValue("@phoneNumber", user.PhoneNumber);
+                sql.Parameters.AddWithValue("@email", user.Email);
+                sql.Parameters.AddWithValue("@Id", user.Id);
+                sql.CommandText = queryString;
+                int result = sql.ExecuteNonQuery();
+                connect.Close();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                connect.Close();
+                return 0;
             }
         }
     }
