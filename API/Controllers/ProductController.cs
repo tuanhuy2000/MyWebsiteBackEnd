@@ -1,50 +1,37 @@
 ﻿using API.Model;
 using API.Repositories;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using MySqlConnector;
 using WebApplication1.Models;
 
 namespace API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UserController : ControllerBase
+    public class ProductController : ControllerBase
     {
-        private readonly UserRepository _userRepository;
+        private readonly ProductRepository _productRepository;
         IConfiguration configuration;
-        public UserController(IConfiguration configuration)
+        public ProductController(IConfiguration configuration)
         {
             this.configuration = configuration;
-            _userRepository = new UserRepository(new Data.DBConnection(), configuration);
+            _productRepository = new ProductRepository(new Data.DBConnection(), configuration);
         }
 
-        //[Authorize("Admin")]
-        //[HttpGet]
-        //public async Task<ActionResult<IEnumerable<User>>> GetAllUser()
-        //{
-        //    try
-        //    {
-        //        List<User> users = await _userRepository.GetAllUsersAsync();
-        //        return users;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest();
-        //    }
-        //}
-
-        [HttpPost("Signin")]
-        public IActionResult Signin(User user)
+        [HttpGet("GetAllTypeProduct")]
+        public async Task<IActionResult> GetAllTypeProduct()
         {
             try
             {
-                bool result = _userRepository.Signin(user);
-                if (result)
+                List<string> list = await _productRepository.GetAllTypeProduct();
+                if (list != null && list.Count > 0)
                 {
                     return Ok(new APIResponse
                     {
                         Success = true,
-                        Message = "Signin success"
+                        Data = list
                     });
                 }
                 else
@@ -52,61 +39,7 @@ namespace API.Controllers
                     return Accepted(new APIResponse
                     {
                         Success = false,
-                        Message = "Signin fail"
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new APIResponse
-                {
-                    Success = false,
-                    Message = ex.Message,
-                });
-            }
-        }
-
-        [HttpPost("Login")]
-        public async Task<IActionResult> Login(Login login)
-        {
-            try
-            {
-                User user = await _userRepository.Login(login);
-                if (user == null)
-                {
-                    return Accepted(new APIResponse
-                    {
-                        Success = false,
-                        Message = "Wrong username or password"
-                    });
-                }
-                else
-                {
-                    var refreshToken = new RefreshToken
-                    {
-                        Id = Guid.NewGuid().ToString(),
-                        User = user,
-                        RefreshTokenn = _userRepository.GenerateRefreshToken(),
-                        Expire = DateTime.UtcNow.AddDays(7),
-                    };
-                    int result = _userRepository.SaveRefreshToken(refreshToken);
-                    if (result == 1)
-                    {
-                        user.AccessToken = _userRepository.GetToken(user);
-                    }
-                    else
-                    {
-                        return Accepted(new APIResponse
-                        {
-                            Success = false,
-                            Message = "Save RefreshToken fail"
-                        });
-                    }
-                    return Ok(new APIResponse
-                    {
-                        Success = true,
-                        Message = "Login Success",
-                        Data = user
+                        Message = "Can't get list of type product"
                     });
                 }
             }
@@ -121,18 +54,18 @@ namespace API.Controllers
         }
 
         [Authorize("User")]
-        [HttpPost("GetRefreshToken")]
-        public async Task<IActionResult> GetRefreshToken(string IdUser)
+        [HttpPost("CreateProduct")]
+        public IActionResult CreateProduct(Product product, string id)
         {
             try
             {
-                string token = await _userRepository.GetRefreshToken(IdUser);
-                if (token != null)
+                int result = _productRepository.CreateProduct(product, id);
+                if (result == 1)
                 {
                     return Ok(new APIResponse
                     {
                         Success = true,
-                        Data = token
+                        Message = "Create product success"
                     });
                 }
                 else
@@ -140,7 +73,7 @@ namespace API.Controllers
                     return Accepted(new APIResponse
                     {
                         Success = false,
-                        Message = "Get RefreshToken fail"
+                        Message = "Create product fail"
                     });
                 }
             }
@@ -154,13 +87,12 @@ namespace API.Controllers
             }
         }
 
-        [Authorize("Admin")]
-        [HttpGet("pageUser")]
-        public async Task<ActionResult<Page>> GetUserPage(int pageNum, int perPage, string direction)
+        [HttpGet("pageProductByIdUser")]
+        public async Task<ActionResult<Page>> GetProductPageByIdUser(string col, int pageNum, int perPage, string direction, string id)
         {
             try
             {
-                Page page = await _userRepository.GetPageUsersAsync(pageNum, perPage, direction);
+                Page page = await _productRepository.GetPageProductAsync(col, pageNum, perPage, direction, id);
                 if (page != null)
                 {
                     return Ok(new APIResponse
@@ -174,7 +106,7 @@ namespace API.Controllers
                     return Accepted(new APIResponse
                     {
                         Success = false,
-                        Message = "Cann't get users"
+                        Message = "Cann't get products"
                     });
                 }
             }
@@ -188,182 +120,12 @@ namespace API.Controllers
             }
         }
 
-        [HttpPost("RenewToken")]
-        public async Task<IActionResult> RenewToken(string refreshToken)
+        [HttpGet("searchProductOfUserByName")]
+        public async Task<ActionResult<Page>> SearchProductPageOfUserByName(int pageNum, int perPage, string direction, string key, string id)
         {
             try
             {
-                string token = await _userRepository.RenewToken(refreshToken);
-                if (token != null)
-                {
-                    return Ok(new APIResponse
-                    {
-                        Success = true,
-                        Data = token
-                    });
-                }
-                else
-                {
-                    return Accepted(new APIResponse
-                    {
-                        Success = false,
-                        Message = "Renew token fail"
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new APIResponse
-                {
-                    Success = false,
-                    Message = ex.Message,
-                });
-            }
-        }
-
-        [Authorize("User")]
-        [HttpPost("GetUserByRefreshToken")]
-        public async Task<IActionResult> GetUserByRefreshToken(string token)
-        {
-            try
-            {
-                User user = await _userRepository.GetUserByRefreshToken(token);
-                if (user == null)
-                {
-                    return Accepted(new APIResponse
-                    {
-                        Success = false,
-                        Message = "Get user by refresh token fail"
-                    });
-                }
-                else
-                {
-                    return Ok(new APIResponse
-                    {
-                        Success = true,
-                        Data = user
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new APIResponse
-                {
-                    Success = false,
-                    Message = ex.Message,
-                });
-            }
-        }
-
-        [Authorize("Admin")]
-        [HttpDelete("DeleteUser")]
-        public IActionResult DeleteUser(string id)
-        {
-            try
-            {
-                bool result = _userRepository.DeleteUserById(id);
-                if (result)
-                {
-                    return Ok(new APIResponse
-                    {
-                        Success = true,
-                        Message = "Delete success"
-                    });
-                }
-                else
-                {
-                    return Accepted(new APIResponse
-                    {
-                        Success = false,
-                        Message = "Delete fail"
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new APIResponse
-                {
-                    Success = false,
-                    Message = ex.Message,
-                });
-            }
-        }
-
-        [Authorize("User")]
-        [HttpPost("ChangePassword")]
-        public IActionResult ChangePassword(string id, string pass, string newPass)
-        {
-            try
-            {
-                int result = _userRepository.ChangePasswordById(id, pass, newPass);
-                if (result == 1)
-                {
-                    return Ok(new APIResponse
-                    {
-                        Success = true,
-                        Message = "Change password success"
-                    });
-                }
-                else
-                {
-                    return Accepted(new APIResponse
-                    {
-                        Success = false,
-                        Message = "Password wrong"
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new APIResponse
-                {
-                    Success = false,
-                    Message = ex.Message,
-                });
-            }
-        }
-
-        [Authorize("User")]
-        [HttpPut("ChangeInfor")]
-        public IActionResult ChangeUserInfor(User user)
-        {
-            try
-            {
-                int result = _userRepository.ChangeUserInfor(user);
-                if (result == 1)
-                {
-                    return Ok(new APIResponse
-                    {
-                        Success = true,
-                        Message = "Change user infor success"
-                    });
-                }
-                else
-                {
-                    return Accepted(new APIResponse
-                    {
-                        Success = false,
-                        Message = "Change user infor fail"
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new APIResponse
-                {
-                    Success = false,
-                    Message = ex.Message,
-                });
-            }
-        }
-
-        [Authorize("Admin")]
-        [HttpGet("searchUser")]
-        public async Task<ActionResult<Page>> SearchUserPage(int pageNum, int perPage, string direction, string key)
-        {
-            try
-            {
-                Page page = await _userRepository.SearchUser(pageNum, perPage, direction, key);
+                Page page = await _productRepository.SearchProductOfUserByName(pageNum, perPage, direction, key, id);
                 if (page != null)
                 {
                     return Ok(new APIResponse
@@ -377,7 +139,174 @@ namespace API.Controllers
                     return Accepted(new APIResponse
                     {
                         Success = false,
-                        Message = "No user match"
+                        Message = "No product match"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
+
+        [Authorize("User")]
+        [HttpDelete("DeleteProductById")]
+        public IActionResult DeleteProduct(string id)
+        {
+            try
+            {
+                int result = _productRepository.DeleteProductById(id);
+                if (result == 1)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Message = "Delete product success"
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "Delete product fail"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
+
+        [HttpGet("GetImgByIdProduct")]
+        public async Task<IActionResult> GetShopByUserId(string id)
+        {
+            try
+            {
+                List<string> imgs = await _productRepository.GetImgByIdProduct(id);
+                if (imgs != null)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Data = imgs
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "You don't have image"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
+
+        [Authorize("User")]
+        [HttpPut("ChangeProduct")]
+        public IActionResult ChangeProduct(Product product)
+        {
+            try
+            {
+                int result = _productRepository.ChangeProductById(product);
+                if (result == 1)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Message = "Change product infor success"
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "Change product infor fail"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
+
+        [HttpGet("searchProductOfUserByAddress")]
+        public async Task<ActionResult<Page>> SearchProductPageOfUserByAddress(int pageNum, int perPage, string direction, string key, string id)
+        {
+            try
+            {
+                Page page = await _productRepository.SearchProductOfUserByAddress(pageNum, perPage, direction, key, id);
+                if (page != null)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Data = page
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "No product match"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
+
+        [HttpGet("searchProductOfUserByType")]
+        public async Task<ActionResult<Page>> SearchProductPageOfUserByType(int pageNum, int perPage, string direction, string key, string id)
+        {
+            try
+            {
+                Page page = await _productRepository.SearchProductOfUserByType(pageNum, perPage, direction, key, id);
+                if (page != null)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Data = page
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "No product match"
                     });
                 }
             }

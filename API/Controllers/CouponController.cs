@@ -1,6 +1,7 @@
 ﻿using API.Model;
 using API.Repositories;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Models;
 
@@ -8,43 +9,28 @@ namespace API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UserController : ControllerBase
+    public class CouponController : ControllerBase
     {
-        private readonly UserRepository _userRepository;
+        private readonly CouponRepository _couponRepository;
         IConfiguration configuration;
-        public UserController(IConfiguration configuration)
+        public CouponController(IConfiguration configuration)
         {
             this.configuration = configuration;
-            _userRepository = new UserRepository(new Data.DBConnection(), configuration);
+            _couponRepository = new CouponRepository(new Data.DBConnection(), configuration);
         }
 
-        //[Authorize("Admin")]
-        //[HttpGet]
-        //public async Task<ActionResult<IEnumerable<User>>> GetAllUser()
-        //{
-        //    try
-        //    {
-        //        List<User> users = await _userRepository.GetAllUsersAsync();
-        //        return users;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest();
-        //    }
-        //}
-
-        [HttpPost("Signin")]
-        public IActionResult Signin(User user)
+        [HttpGet("GetAllTypeCoupon")]
+        public async Task<IActionResult> GetAllTypeCoupon()
         {
             try
             {
-                bool result = _userRepository.Signin(user);
-                if (result)
+                List<string> list = await _couponRepository.GetAllTypeCoupon();
+                if (list != null && list.Count > 0)
                 {
                     return Ok(new APIResponse
                     {
                         Success = true,
-                        Message = "Signin success"
+                        Data = list
                     });
                 }
                 else
@@ -52,61 +38,7 @@ namespace API.Controllers
                     return Accepted(new APIResponse
                     {
                         Success = false,
-                        Message = "Signin fail"
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new APIResponse
-                {
-                    Success = false,
-                    Message = ex.Message,
-                });
-            }
-        }
-
-        [HttpPost("Login")]
-        public async Task<IActionResult> Login(Login login)
-        {
-            try
-            {
-                User user = await _userRepository.Login(login);
-                if (user == null)
-                {
-                    return Accepted(new APIResponse
-                    {
-                        Success = false,
-                        Message = "Wrong username or password"
-                    });
-                }
-                else
-                {
-                    var refreshToken = new RefreshToken
-                    {
-                        Id = Guid.NewGuid().ToString(),
-                        User = user,
-                        RefreshTokenn = _userRepository.GenerateRefreshToken(),
-                        Expire = DateTime.UtcNow.AddDays(7),
-                    };
-                    int result = _userRepository.SaveRefreshToken(refreshToken);
-                    if (result == 1)
-                    {
-                        user.AccessToken = _userRepository.GetToken(user);
-                    }
-                    else
-                    {
-                        return Accepted(new APIResponse
-                        {
-                            Success = false,
-                            Message = "Save RefreshToken fail"
-                        });
-                    }
-                    return Ok(new APIResponse
-                    {
-                        Success = true,
-                        Message = "Login Success",
-                        Data = user
+                        Message = "Can't get list of type coupon"
                     });
                 }
             }
@@ -121,18 +53,18 @@ namespace API.Controllers
         }
 
         [Authorize("User")]
-        [HttpPost("GetRefreshToken")]
-        public async Task<IActionResult> GetRefreshToken(string IdUser)
+        [HttpPost("CreateShopCoupon")]
+        public IActionResult CreateShopCoupon(Coupon coupon, string id)
         {
             try
             {
-                string token = await _userRepository.GetRefreshToken(IdUser);
-                if (token != null)
+                int result = _couponRepository.CreateShopCoupon(coupon, id);
+                if (result == 1)
                 {
                     return Ok(new APIResponse
                     {
                         Success = true,
-                        Data = token
+                        Message = "Create coupon success"
                     });
                 }
                 else
@@ -140,7 +72,7 @@ namespace API.Controllers
                     return Accepted(new APIResponse
                     {
                         Success = false,
-                        Message = "Get RefreshToken fail"
+                        Message = "Create coupon fail"
                     });
                 }
             }
@@ -154,13 +86,13 @@ namespace API.Controllers
             }
         }
 
-        [Authorize("Admin")]
-        [HttpGet("pageUser")]
-        public async Task<ActionResult<Page>> GetUserPage(int pageNum, int perPage, string direction)
+        [Authorize("User")]
+        [HttpGet("pageCouponByIdUser")]
+        public async Task<ActionResult<Page>> GetCouponPageByIdUser(int pageNum, int perPage, string direction, string id)
         {
             try
             {
-                Page page = await _userRepository.GetPageUsersAsync(pageNum, perPage, direction);
+                Page page = await _couponRepository.GetPageCouponAsync(pageNum, perPage, direction, id);
                 if (page != null)
                 {
                     return Ok(new APIResponse
@@ -174,40 +106,7 @@ namespace API.Controllers
                     return Accepted(new APIResponse
                     {
                         Success = false,
-                        Message = "Cann't get users"
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new APIResponse
-                {
-                    Success = false,
-                    Message = ex.Message,
-                });
-            }
-        }
-
-        [HttpPost("RenewToken")]
-        public async Task<IActionResult> RenewToken(string refreshToken)
-        {
-            try
-            {
-                string token = await _userRepository.RenewToken(refreshToken);
-                if (token != null)
-                {
-                    return Ok(new APIResponse
-                    {
-                        Success = true,
-                        Data = token
-                    });
-                }
-                else
-                {
-                    return Accepted(new APIResponse
-                    {
-                        Success = false,
-                        Message = "Renew token fail"
+                        Message = "Cann't get coupons"
                     });
                 }
             }
@@ -222,86 +121,18 @@ namespace API.Controllers
         }
 
         [Authorize("User")]
-        [HttpPost("GetUserByRefreshToken")]
-        public async Task<IActionResult> GetUserByRefreshToken(string token)
+        [HttpDelete("DeleteCouponById")]
+        public IActionResult DeleteCoupon(string id)
         {
             try
             {
-                User user = await _userRepository.GetUserByRefreshToken(token);
-                if (user == null)
-                {
-                    return Accepted(new APIResponse
-                    {
-                        Success = false,
-                        Message = "Get user by refresh token fail"
-                    });
-                }
-                else
-                {
-                    return Ok(new APIResponse
-                    {
-                        Success = true,
-                        Data = user
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new APIResponse
-                {
-                    Success = false,
-                    Message = ex.Message,
-                });
-            }
-        }
-
-        [Authorize("Admin")]
-        [HttpDelete("DeleteUser")]
-        public IActionResult DeleteUser(string id)
-        {
-            try
-            {
-                bool result = _userRepository.DeleteUserById(id);
-                if (result)
-                {
-                    return Ok(new APIResponse
-                    {
-                        Success = true,
-                        Message = "Delete success"
-                    });
-                }
-                else
-                {
-                    return Accepted(new APIResponse
-                    {
-                        Success = false,
-                        Message = "Delete fail"
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new APIResponse
-                {
-                    Success = false,
-                    Message = ex.Message,
-                });
-            }
-        }
-
-        [Authorize("User")]
-        [HttpPost("ChangePassword")]
-        public IActionResult ChangePassword(string id, string pass, string newPass)
-        {
-            try
-            {
-                int result = _userRepository.ChangePasswordById(id, pass, newPass);
+                int result = _couponRepository.DeleteCouponById(id);
                 if (result == 1)
                 {
                     return Ok(new APIResponse
                     {
                         Success = true,
-                        Message = "Change password success"
+                        Message = "Delete coupon success"
                     });
                 }
                 else
@@ -309,7 +140,7 @@ namespace API.Controllers
                     return Accepted(new APIResponse
                     {
                         Success = false,
-                        Message = "Password wrong"
+                        Message = "Delete coupon fail"
                     });
                 }
             }
@@ -324,18 +155,18 @@ namespace API.Controllers
         }
 
         [Authorize("User")]
-        [HttpPut("ChangeInfor")]
-        public IActionResult ChangeUserInfor(User user)
+        [HttpPut("ChangeCoupon")]
+        public IActionResult ChangeCoupon(Coupon coupon)
         {
             try
             {
-                int result = _userRepository.ChangeUserInfor(user);
+                int result = _couponRepository.ChangeCouponById(coupon);
                 if (result == 1)
                 {
                     return Ok(new APIResponse
                     {
                         Success = true,
-                        Message = "Change user infor success"
+                        Message = "Change coupon infor success"
                     });
                 }
                 else
@@ -343,7 +174,7 @@ namespace API.Controllers
                     return Accepted(new APIResponse
                     {
                         Success = false,
-                        Message = "Change user infor fail"
+                        Message = "Change coupon infor fail"
                     });
                 }
             }
@@ -357,13 +188,13 @@ namespace API.Controllers
             }
         }
 
-        [Authorize("Admin")]
-        [HttpGet("searchUser")]
-        public async Task<ActionResult<Page>> SearchUserPage(int pageNum, int perPage, string direction, string key)
+        [Authorize("User")]
+        [HttpGet("searchCouponOfUserByType")]
+        public async Task<ActionResult<Page>> SearchCouponPageOfUserByType(int pageNum, int perPage, string direction, string key, string id)
         {
             try
             {
-                Page page = await _userRepository.SearchUser(pageNum, perPage, direction, key);
+                Page page = await _couponRepository.SearchCoupontOfUserByType(pageNum, perPage, direction, key, id);
                 if (page != null)
                 {
                     return Ok(new APIResponse
@@ -377,7 +208,109 @@ namespace API.Controllers
                     return Accepted(new APIResponse
                     {
                         Success = false,
-                        Message = "No user match"
+                        Message = "No coupon match"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
+
+        [Authorize("User")]
+        [HttpGet("searchCouponOfUserByProductType")]
+        public async Task<ActionResult<Page>> SearchCouponPageOfUserByProductType(int pageNum, int perPage, string direction, string key, string id)
+        {
+            try
+            {
+                Page page = await _couponRepository.SearchCoupontOfUserByProductType(pageNum, perPage, direction, key, id);
+                if (page != null)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Data = page
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "No coupon match"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
+
+        [Authorize("User")]
+        [HttpGet("searchCouponOfUserByDate")]
+        public async Task<ActionResult<Page>> SearchCouponPageOfUserByDate(int pageNum, int perPage, string direction, DateTime from, DateTime to, string id)
+        {
+            try
+            {
+                Page page = await _couponRepository.SearchCoupontOfUserByDate(pageNum, perPage, direction, from, to, id);
+                if (page != null)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Data = page
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "No coupon match"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
+
+        [Authorize("Admin")]
+        [HttpPost("CreateAdminCoupon")]
+        public IActionResult CreateAdminCoupon(Coupon coupon)
+        {
+            try
+            {
+                int result = _couponRepository.CreateAdminCoupon(coupon);
+                if (result == 1)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Message = "Create coupon success"
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "Create coupon fail"
                     });
                 }
             }

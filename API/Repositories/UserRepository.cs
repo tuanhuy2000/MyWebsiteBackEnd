@@ -62,9 +62,10 @@ namespace API.Repositories
         //    return users;
         //}
 
-        public int Signin(User user)
+        public bool Signin(User user)
         {
             MySqlConnection connect = conn.ConnectDB();
+            MySqlConnection connect1 = conn.ConnectDB();
             try
             {
                 connect.Open();
@@ -80,12 +81,25 @@ namespace API.Repositories
                 sql.Parameters.AddWithValue("@Role", user.Role);
                 int result = sql.ExecuteNonQuery();
                 connect.Close();
-                return result;
+                connect1.Open();
+                var sql1 = new MySqlCommand();
+                sql1.Connection = connect1;
+                string queryString1 = "INSERT INTO tbl_cart(Id, IdUser) VALUES (@Id, @IdUser)";
+                sql1.Parameters.AddWithValue("@Id", Guid.NewGuid().ToString());
+                sql1.Parameters.AddWithValue("@IdUser", user.Id);
+                sql1.CommandText = queryString1;
+                int result1 = sql1.ExecuteNonQuery();
+                connect1.Close();
+                if (result1 == 1 && result == 1)
+                {
+                    return true;
+                }
+                return false;
             }
             catch (Exception ex)
             {
                 connect.Close();
-                return 0;
+                return false;
             }
         }
 
@@ -423,35 +437,111 @@ namespace API.Repositories
             return userLogin;
         }
 
-        public int DeleteUserById(string id)
+        public bool DeleteUserById(string id)
         {
-            MySqlConnection connect = conn.ConnectDB();
             MySqlConnection connect1 = conn.ConnectDB();
+            MySqlConnection connect2 = conn.ConnectDB();
+            MySqlConnection connect3 = conn.ConnectDB();
+            MySqlConnection connect4 = conn.ConnectDB();
+            MySqlConnection connect5 = conn.ConnectDB();
+            MySqlConnection connect6 = conn.ConnectDB();
+            MySqlConnection connect7 = conn.ConnectDB();
+            MySqlConnection connect8 = conn.ConnectDB();
             try
             {
-                connect.Open();
-                var sql = new MySqlCommand();
-                sql.Connection = connect;
-                string queryString = "DELETE r.* FROM tbl_refreshtoken As r, tbl_user AS u WHERE r.IdUser = u.Id AND u.Id = @Id";
-                sql.Parameters.AddWithValue("@Id", id);
-                sql.CommandText = queryString;
-                sql.ExecuteNonQuery();
-                connect.Close();
+                // delete from tbl_cart_product when product in user's shop or user's cart
                 connect1.Open();
                 var sql1 = new MySqlCommand();
                 sql1.Connection = connect1;
-                string queryString1 = "DELETE FROM tbl_user WHERE Id = @Id";
+                string queryString1 = "DELETE cp.* FROM tbl_cart_product As cp, tbl_user AS u, tbl_shop AS s, tbl_product AS p, tbl_cart AS c " +
+                    "WHERE ( s.IdUser = u.Id AND s.Id = p.IdShop AND u.Id = @Id AND cp.IdProduct = p.Id )" +
+                    " OR ( u.Id = @Id AND u.Id = c.IdUser AND c.Id = cp.IdCart )";
                 sql1.Parameters.AddWithValue("@Id", id);
                 sql1.CommandText = queryString1;
-                int result = sql1.ExecuteNonQuery();
+                sql1.ExecuteNonQuery();
                 connect1.Close();
-                return result;
+                // delete img when img in user's shop's product
+                connect8.Open();
+                var sql8 = new MySqlCommand();
+                sql8.Connection = connect8;
+                string queryString8 = "DELETE i.* FROM tbl_img As i, tbl_user AS u, tbl_shop AS s, tbl_product AS p " +
+                    "WHERE s.IdUser = u.Id AND s.Id = p.IdShop AND u.Id = @Id AND i.IdProduct = p.Id";
+                sql8.Parameters.AddWithValue("@Id", id);
+                sql8.CommandText = queryString8;
+                sql8.ExecuteNonQuery();
+                connect8.Close();
+                // delete product when product in user's shop
+                connect2.Open();
+                var sql2 = new MySqlCommand();
+                sql2.Connection = connect2;
+                string queryString2 = "DELETE p.* FROM tbl_product As p, tbl_user AS u, tbl_shop AS s " +
+                    "WHERE s.IdUser = u.Id AND s.Id = p.IdShop AND u.Id = @Id";
+                sql2.Parameters.AddWithValue("@Id", id);
+                sql2.CommandText = queryString2;
+                sql2.ExecuteNonQuery();
+                connect2.Close();
+                // delete coupon when coupon in user's shop 
+                connect3.Open();
+                var sql3 = new MySqlCommand();
+                sql3.Connection = connect3;
+                string queryString3 = "DELETE c.* FROM tbl_coupon As c, tbl_user AS u, tbl_shop AS s WHERE" +
+                    " s.IdUser = u.Id AND s.Id = c.IdShop AND u.Id = @Id";
+                sql3.Parameters.AddWithValue("@Id", id);
+                sql3.CommandText = queryString3;
+                sql3.ExecuteNonQuery();
+                connect3.Close();
+                // delete user's refresh token 
+                connect4.Open();
+                var sql4 = new MySqlCommand();
+                sql4.Connection = connect4;
+                string queryString4 = "DELETE r.* FROM tbl_refreshtoken As r, tbl_user AS u WHERE r.IdUser = u.Id AND u.Id = @Id";
+                sql4.Parameters.AddWithValue("@Id", id);
+                sql4.CommandText = queryString4;
+                sql4.ExecuteNonQuery();
+                connect4.Close();
+                // delete user's cart
+                connect5.Open();
+                var sql5 = new MySqlCommand();
+                sql5.Connection = connect5;
+                string queryString5 = "DELETE r.* FROM tbl_cart As r, tbl_user AS u WHERE r.IdUser = u.Id AND u.Id = @Id";
+                sql5.Parameters.AddWithValue("@Id", id);
+                sql5.CommandText = queryString5;
+                int result5 = sql5.ExecuteNonQuery();
+                connect5.Close();
+                // delete user's shop
+                connect6.Open();
+                var sql6 = new MySqlCommand();
+                sql6.Connection = connect6;
+                string queryString6 = "DELETE s.* FROM tbl_shop As s, tbl_user AS u WHERE s.IdUser = u.Id AND u.Id = @Id";
+                sql6.Parameters.AddWithValue("@Id", id);
+                sql6.CommandText = queryString6;
+                sql6.ExecuteNonQuery();
+                connect6.Close();
+                // delete user
+                connect7.Open();
+                var sql7 = new MySqlCommand();
+                sql7.Connection = connect7;
+                string queryString7 = "DELETE FROM tbl_user WHERE Id = @Id";
+                sql7.Parameters.AddWithValue("@Id", id);
+                sql7.CommandText = queryString7;
+                int result7 = sql7.ExecuteNonQuery();
+                connect7.Close();
+                if (result5 == 1 && result7 == 1)
+                {
+                    return true;
+                }
+                return false;
             }
             catch (Exception ex)
             {
-                connect.Close();
                 connect1.Close();
-                return 0;
+                connect2.Close();
+                connect3.Close();
+                connect4.Close();
+                connect5.Close();
+                connect6.Close();
+                connect7.Close();
+                return false;
             }
         }
 
@@ -502,6 +592,71 @@ namespace API.Repositories
                 connect.Close();
                 return 0;
             }
+        }
+
+        public async Task<Page> SearchUser(int pageNum, int perPage, string direction, string key)
+        {
+            List<User> users = new List<User>();
+            int total = 0;
+            int totalPages = 0;
+            Page page = null;
+            MySqlConnection connect = conn.ConnectDB();
+            MySqlConnection connect1 = conn.ConnectDB();
+            try
+            {
+                connect.Open();
+                var command = new MySqlCommand();
+                command.Connection = connect;
+                command.CommandText = "SELECT COUNT(*) FROM tbl_user WHERE Name LIKE @key OR PhoneNumber LIKE @key OR Email LIKE @key";
+                command.Parameters.AddWithValue("@key", "%" + key + "%");
+                await using var reader = command.ExecuteReader();
+                if (reader.HasRows)
+                {
+                    while (reader.Read())
+                    {
+                        total = reader.GetInt32(0);
+                    }
+                }
+                connect.Close();
+                connect1.Open();
+                var command1 = new MySqlCommand();
+                command1.Connection = connect1;
+                command1.CommandText = "SELECT * FROM tbl_user WHERE Name LIKE @key OR PhoneNumber LIKE @key OR Email LIKE @key ORDER BY Name " + direction + " LIMIT @pageNum, @perPage";
+                command1.Parameters.AddWithValue("@pageNum", (int)(pageNum * perPage) - perPage);
+                command1.Parameters.AddWithValue("@perPage", (int)perPage);
+                command1.Parameters.AddWithValue("@key", "%" + key + "%");
+                await using var reader1 = command1.ExecuteReader();
+                if (reader1.HasRows)
+                {
+                    while (reader1.Read())
+                    {
+                        var id = reader1.GetString(0);
+                        var name = reader1.GetString(1);
+                        var phoneNumber = reader1.GetString("PhoneNumber");
+                        var email = reader1.GetString(3);
+                        var role = reader1.GetString(6);
+                        User user = new User { Id = id, Name = name, PhoneNumber = phoneNumber, Email = email, Role = role };
+                        users.Add(user);
+                    }
+                }
+                connect1.Close();
+                if (((double)total / (double)perPage) % 1 == 0)
+                {
+                    totalPages = total / perPage;
+                }
+                else
+                {
+                    totalPages = (total / perPage) + 1;
+                }
+                page = new Page { PageNum = pageNum, PerPage = perPage, Total = total, TotalPages = totalPages, Data = users };
+            }
+            catch (Exception ex)
+            {
+                connect.Close();
+                connect1.Close();
+                return null;
+            }
+            return page;
         }
     }
 }
