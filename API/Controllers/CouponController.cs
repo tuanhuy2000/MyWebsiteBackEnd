@@ -194,7 +194,7 @@ namespace API.Controllers
         {
             try
             {
-                Page page = await _couponRepository.SearchCoupontOfUserByType(pageNum, perPage, direction, key, id);
+                Page page = await _couponRepository.SearchCouponOfUserByType(pageNum, perPage, direction, key, id);
                 if (page != null)
                 {
                     return Ok(new APIResponse
@@ -228,7 +228,7 @@ namespace API.Controllers
         {
             try
             {
-                Page page = await _couponRepository.SearchCoupontOfUserByProductType(pageNum, perPage, direction, key, id);
+                Page page = await _couponRepository.SearchCouponOfUserByProductType(pageNum, perPage, direction, key, id);
                 if (page != null)
                 {
                     return Ok(new APIResponse
@@ -262,7 +262,7 @@ namespace API.Controllers
         {
             try
             {
-                Page page = await _couponRepository.SearchCoupontOfUserByDate(pageNum, perPage, direction, from, to, id);
+                Page page = await _couponRepository.SearchCouponOfUserByDate(pageNum, perPage, direction, from, to, id);
                 if (page != null)
                 {
                     return Ok(new APIResponse
@@ -311,6 +311,74 @@ namespace API.Controllers
                     {
                         Success = false,
                         Message = "Create coupon fail"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
+
+        [Authorize("Admin")]
+        [HttpGet("pageAdminCoupon")]
+        public async Task<ActionResult<Page>> GetAdminCouponPage(int pageNum, int perPage, string direction)
+        {
+            try
+            {
+                Page page = await _couponRepository.GetPageAdminCouponAsync(pageNum, perPage, direction);
+                if (page != null)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Data = page
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "Cann't get coupons"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
+
+        [Authorize("Admin")]
+        [HttpGet("searchAdminCouponByType")]
+        public async Task<ActionResult<Page>> SearchAdminCouponPageByType(int pageNum, int perPage, string direction, string key)
+        {
+            try
+            {
+                Page page = await _couponRepository.SearchAdminCouponByType(pageNum, perPage, direction, key);
+                if (page != null)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Data = page
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "No coupon match"
                     });
                 }
             }
