@@ -612,5 +612,74 @@ namespace API.Repositories
             }
             return page;
         }
+
+        //public async Task<Page> SearchAdminCouponByType(int pageNum, int perPage, string direction, string key)
+        //{
+        //    List<Coupon> coupons = new List<Coupon>();
+        //    int total = 0;
+        //    int totalPages = 0;
+        //    Page page = null;
+        //    MySqlConnection connect = conn.ConnectDB();
+        //    MySqlConnection connect1 = conn.ConnectDB();
+        //    try
+        //    {
+        //        connect.Open();
+        //        var command = new MySqlCommand();
+        //        command.Connection = connect;
+        //        command.CommandText = "SELECT COUNT(Id) FROM tbl_coupon WHERE CouponType = @key AND IdShop IS NULL";
+        //        command.Parameters.AddWithValue("@key", key);
+        //        await using var reader = command.ExecuteReader();
+        //        if (reader.HasRows)
+        //        {
+        //            while (reader.Read())
+        //            {
+        //                total = reader.GetInt32(0);
+        //            }
+        //        }
+        //        connect.Close();
+        //        connect1.Open();
+        //        var command1 = new MySqlCommand();
+        //        command1.Connection = connect1;
+        //        command1.CommandText = "SELECT * FROM tbl_coupon WHERE IdShop IS NULL AND CouponType = @key ORDER BY CouponFrom " + direction + " LIMIT @pageNum, @perPage";
+        //        command1.Parameters.AddWithValue("@pageNum", (int)(pageNum * perPage) - perPage);
+        //        command1.Parameters.AddWithValue("@perPage", (int)perPage);
+        //        command1.Parameters.AddWithValue("@key", key);
+        //        await using var reader1 = command1.ExecuteReader();
+        //        if (reader1.HasRows)
+        //        {
+        //            while (reader1.Read())
+        //            {
+        //                var id = reader1.GetString(0);
+        //                var code = reader1.GetString(1);
+        //                var quantity = reader1.GetInt32(2);
+        //                var worth = reader1.GetString(3);
+        //                var describe = reader1.GetString(4);
+        //                var from = reader1.GetDateTime(5);
+        //                var to = reader1.GetDateTime(6);
+        //                var type = reader1.GetString(7);
+        //                var typeProduct = reader1.GetString(8);
+        //                Coupon coupon = new Coupon { Id = id, Code = code, Quantity = quantity, Worth = worth, Describe = describe, From = from, To = to, Type = type, ProductType = typeProduct };
+        //                coupons.Add(coupon);
+        //            }
+        //        }
+        //        connect1.Close();
+        //        if (((double)total / (double)perPage) % 1 == 0)
+        //        {
+        //            totalPages = total / perPage;
+        //        }
+        //        else
+        //        {
+        //            totalPages = (total / perPage) + 1;
+        //        }
+        //        page = new Page { PageNum = pageNum, PerPage = perPage, Total = total, TotalPages = totalPages, Data = coupons };
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        connect.Close();
+        //        connect1.Close();
+        //        return null;
+        //    }
+        //    return page;
+        //}
     }
 }
