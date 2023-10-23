@@ -532,5 +532,35 @@ namespace API.Repositories
             }
             return page;
         }
+
+        public async Task<int> GetCountProductOfUser(string id)
+        {
+            int total = 0;
+            MySqlConnection connect = conn.ConnectDB();
+            try
+            {
+                connect.Open();
+                var command = new MySqlCommand();
+                command.Connection = connect;
+                command.CommandText = "SELECT COUNT(p.id) FROM tbl_product AS p, tbl_user AS u, tbl_shop AS s WHERE u.Id = s.IdUser AND s.Id = p.IdShop AND u.Id = @id";
+                command.Parameters.AddWithValue("@id", id);
+                await using var reader = command.ExecuteReader();
+                if (reader.HasRows)
+                {
+                    while (reader.Read())
+                    {
+                        total = reader.GetInt32(0);
+                    }
+                }
+                connect.Close();
+
+            }
+            catch (Exception ex)
+            {
+                connect.Close();
+                return 0;
+            }
+            return total;
+        }
     }
 }

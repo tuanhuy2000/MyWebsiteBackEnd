@@ -391,5 +391,117 @@ namespace API.Controllers
                 });
             }
         }
+
+        [Authorize("Admin")]
+        [HttpGet("searchAdminCouponByProductType")]
+        public async Task<ActionResult<Page>> SearchAdminCouponPageByProductType(int pageNum, int perPage, string direction, string key)
+        {
+            try
+            {
+                Page page = await _couponRepository.SearchAdminCouponByProductType(pageNum, perPage, direction, key);
+                if (page != null)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Data = page
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "No coupon match"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
+
+        [Authorize("Admin")]
+        [HttpGet("searchAdminCouponByDate")]
+        public async Task<ActionResult<Page>> SearchAdminCouponPageByDate(int pageNum, int perPage, string direction, DateTime from, DateTime to)
+        {
+            try
+            {
+                Page page = await _couponRepository.SearchAdminCouponByDate(pageNum, perPage, direction, from, to);
+                if (page != null)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Data = page
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "No coupon match"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
+
+        [HttpGet("CountCouponByIdUser")]
+        public async Task<ActionResult<Page>> GetCountCouponByIdUser(string id)
+        {
+            try
+            {
+                int count = await _couponRepository.GetCountCouponOfUser(id);
+                return Ok(new APIResponse
+                {
+                    Success = true,
+                    Data = count
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
+
+        [HttpGet("CountAdminCoupon")]
+        public async Task<ActionResult<Page>> GetCountAdminCoupon()
+        {
+            try
+            {
+                int count = await _couponRepository.GetCountAdminCoupon();
+                return Ok(new APIResponse
+                {
+                    Success = true,
+                    Data = count
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
     }
 }
