@@ -152,5 +152,38 @@ namespace API.Controllers
                 });
             }
         }
+
+        [HttpGet("GetShopByProduct")]
+        public async Task<IActionResult> GetShopByProductId(string id)
+        {
+            try
+            {
+                Shop shop = await _shopRepository.GetShopByProductId(id);
+                if (shop != null)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Data = shop
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "You don't have shop"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
     }
 }

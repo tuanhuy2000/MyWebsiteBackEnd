@@ -36,7 +36,7 @@ namespace API.Repositories
                         var name = reader.GetString(1);
                         byte[] imageBytes = (byte[])reader["Avatar"];
                         string avt = Convert.ToBase64String(imageBytes);
-                        shop = new Shop { Id = id, Name = name, Avatar = avt };
+                        shop = new Shop { Id = idShop, Name = name, Avatar = avt };
                         break;
                     }
                 }
@@ -176,6 +176,46 @@ namespace API.Repositories
                 connect6.Close();
                 return 0;
             }
+        }
+
+        public async Task<Shop> GetShopByProductId(string id)
+        {
+            MySqlConnection connect = conn.ConnectDB();
+            Shop shop = null;
+            try
+            {
+                connect.Open();
+                var command = new MySqlCommand();
+                command.Connection = connect;
+                string queryString = "SELECT s.* FROM tbl_shop AS s, tbl_product AS p WHERE p.IdShop = s.Id AND p.Id = @id";
+                command.Parameters.AddWithValue("@id", id);
+                command.CommandText = queryString;
+                await using var reader = command.ExecuteReader();
+                if (reader.HasRows)
+                {
+                    while (reader.Read())
+                    {
+                        var idShop = reader.GetString(0);
+                        var name = reader.GetString(1);
+                        byte[] imageBytes = (byte[])reader["Avatar"];
+                        string avt = Convert.ToBase64String(imageBytes);
+                        shop = new Shop { Id = idShop, Name = name, Avatar = avt };
+                        break;
+                    }
+                }
+                else
+                {
+                    connect.Close();
+                    return shop;
+                }
+            }
+            catch (Exception ex)
+            {
+                connect.Close();
+                return null;
+            }
+            connect.Close();
+            return shop;
         }
     }
 }

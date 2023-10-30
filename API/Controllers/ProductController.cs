@@ -408,5 +408,28 @@ namespace API.Controllers
                 });
             }
         }
+
+        [HttpGet("CountProductOfShop")]
+        public async Task<IActionResult> CountProductByIdShop(string id)
+        {
+            try
+            {
+                int count = await _productRepository.CountProductOfShop(id);
+                return Ok(new APIResponse
+                {
+                    Success = true,
+                    Data = count
+                });
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
     }
 }
