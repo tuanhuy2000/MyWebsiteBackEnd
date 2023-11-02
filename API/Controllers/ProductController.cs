@@ -431,5 +431,71 @@ namespace API.Controllers
                 });
             }
         }
+
+        [HttpGet("pageProductOfShop")]
+        public async Task<ActionResult<Page>> GetProductPageOfShop(int pageNum, int perPage, string idShop)
+        {
+            try
+            {
+                Page page = await _productRepository.GetPageProductOfShop(pageNum, perPage, idShop);
+                if (page != null)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Data = page
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "Cann't get products"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
+
+        [HttpGet("searchProductOfShop")]
+        public async Task<ActionResult<Page>> SearchProductPageOfShop(int pageNum, int perPage, string? keyWord, string? address, string? type, string direction, string idShop)
+        {
+            try
+            {
+                Page page = await _productRepository.SearchPageProductOfShop(pageNum, perPage, keyWord, address, type, direction, idShop);
+                if (page != null)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Data = page
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "Cann't get products"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
     }
 }
