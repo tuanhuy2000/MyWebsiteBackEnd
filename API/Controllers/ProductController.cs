@@ -497,5 +497,38 @@ namespace API.Controllers
                 });
             }
         }
+
+        [HttpGet("GetProductById")]
+        public async Task<IActionResult> GetProductById(string id)
+        {
+            try
+            {
+                Product product = await _productRepository.GetProductById(id);
+                if (product != null)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Data = product
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "Cann't get products"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using API.Data;
 using API.Model;
 using MySqlConnector;
+using static Microsoft.Extensions.Logging.EventSource.LoggingEventSource;
 
 namespace API.Repositories
 {
@@ -13,6 +14,11 @@ namespace API.Repositories
         {
             this.conn = conn;
             _configuration = configuration;
+        }
+
+        public ProductRepository(DBConnection conn)
+        {
+            this.conn = conn;
         }
 
         public async Task<List<string>> GetAllTypeProduct()
@@ -877,6 +883,42 @@ namespace API.Repositories
                 return null;
             }
             return page;
+        }
+
+        public async Task<Product> GetProductById(string id)
+        {
+            MySqlConnection connect = conn.ConnectDB();
+            Product product = null;
+            try
+            {
+                connect.Open();
+                var command = new MySqlCommand();
+                command.Connection = connect;
+                command.CommandText = "SELECT * FROM tbl_product WHERE Id = @Id";
+                command.Parameters.AddWithValue("@Id", id);
+                await using var reader = command.ExecuteReader();
+                if (reader.HasRows)
+                {
+                    while (reader.Read())
+                    {
+                        var name = reader.GetString(1);
+                        var price = reader.GetInt32(2);
+                        var quantity = reader.GetInt32(3);
+                        var infor = reader.GetString(4);
+                        var address = reader.GetString(5);
+                        var type = reader.GetString(6);
+                        List<string> img = await GetImgByIdProduct(id);
+                        product = new Product { Id = id, Name = name, Price = price, Quantity = quantity, Information = infor, Address = address, Type = type, Img = img };
+                    }
+                }
+                connect.Close();
+            }
+            catch (Exception ex)
+            {
+                connect.Close();
+                return null;
+            }
+            return product;
         }
     }
 }
