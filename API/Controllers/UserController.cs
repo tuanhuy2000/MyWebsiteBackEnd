@@ -52,7 +52,7 @@ namespace API.Controllers
                     return Accepted(new APIResponse
                     {
                         Success = false,
-                        Message = "Signin fail"
+                        Message = "Available Username or something wrong"
                     });
                 }
             }
@@ -378,6 +378,141 @@ namespace API.Controllers
                     {
                         Success = false,
                         Message = "No user match"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
+
+        [Authorize("User")]
+        [HttpPost("AddAddress")]
+        public IActionResult AddAddress(string id, Address address)
+        {
+            try
+            {
+                bool result = _userRepository.AddAddress(id, address);
+                if (result)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "Add Address fail"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
+
+        [Authorize("User")]
+        [HttpGet("GetAllAddress")]
+        public async Task<IActionResult> GetAllAddress(string id)
+        {
+            try
+            {
+                List<Address> result = await _userRepository.GetAllAddress(id);
+                if (result != null)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Data = result
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "Get Address fail"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
+
+        [Authorize("User")]
+        [HttpPut("ChangeAddress")]
+        public IActionResult ChangeAddress(Address address)
+        {
+            try
+            {
+                int result = _userRepository.ChangeAddress(address);
+                if (result == 1)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Message = "Change address infor success"
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "Change address infor fail"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
+
+        [Authorize("User")]
+        [HttpDelete("DeleteAddress")]
+        public IActionResult DeleteAddress(string id)
+        {
+            try
+            {
+                int result = _userRepository.DeleteAddress(id);
+                if (result == 1)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Message = "Delete address success"
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "Delete address fail"
                     });
                 }
             }

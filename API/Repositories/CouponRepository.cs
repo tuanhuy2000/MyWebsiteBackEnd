@@ -83,11 +83,16 @@ namespace API.Repositories
                 connect1.Open();
                 MySqlCommand sql = new MySqlCommand();
                 sql.Connection = connect1;
-                sql.CommandText = "INSERT INTO tbl_coupon (Id, Code, Quantity, Worth, DescribeInfor, CouponFrom, CouponTo, CouponType, ProductType, IdShop) VALUES (@id, @code, @quantity, @worth, @describe, @from, @to, @cType, @pType, @sId)";
+                //sql.CommandText = "INSERT INTO tbl_coupon (Id, Code, Quantity, Worth, DescribeInfor, CouponFrom, CouponTo, CouponType, ProductType, IdShop) VALUES (@id, @code, @quantity, @worth, @describe, @from, @to, @cType, @pType, @sId)";
+                sql.CommandText = "INSERT INTO tbl_coupon (Id, Code, Quantity, Worth, Minimum, Maximum, DescribeInfor, CouponFrom, CouponTo, CouponType, ProductType, IdShop) " +
+                    "SELECT * FROM (SELECT @id AS Id, @code AS Code, @quantity AS Quantity, @worth AS Worth, @minimum AS Minimum, @maximum AS Maximum, @describe AS DescribeInfor, @from AS CouponFrom, @to AS CouponTo, @cType AS CouponType, @pType AS ProductType, @sId AS IdShop) AS tmp" +
+                    " WHERE NOT EXISTS (SELECT Code FROM tbl_coupon WHERE Code = @code) LIMIT 1";
                 sql.Parameters.AddWithValue("@id", coupon.Id);
                 sql.Parameters.AddWithValue("@code", coupon.Code);
                 sql.Parameters.AddWithValue("@quantity", coupon.Quantity);
                 sql.Parameters.AddWithValue("@worth", coupon.Worth);
+                sql.Parameters.AddWithValue("@minimum", coupon.Minimum);
+                sql.Parameters.AddWithValue("@maximum", coupon.Maximum);
                 sql.Parameters.AddWithValue("@describe", coupon.Describe);
                 sql.Parameters.AddWithValue("@from", fr);
                 sql.Parameters.AddWithValue("@to", t);
@@ -146,12 +151,14 @@ namespace API.Repositories
                         var code = reader1.GetString(1);
                         var quantity = reader1.GetInt32(2);
                         var worth = reader1.GetString(3);
-                        var describe = reader1.GetString(4);
-                        var from = reader1.GetDateTime(5);
-                        var to = reader1.GetDateTime(6);
-                        var type = reader1.GetString(7);
-                        var typeProduct = reader1.GetString(8);
-                        Coupon coupon = new Coupon { Id = id, Code = code, Quantity = quantity, Worth = worth, Describe = describe, From = from, To = to, Type = type, ProductType = typeProduct };
+                        var minimum = reader1.GetString(4);
+                        var maximum = reader1.GetString(5);
+                        var describe = reader1.GetString(6);
+                        var from = reader1.GetDateTime(7);
+                        var to = reader1.GetDateTime(8);
+                        var type = reader1.GetString(9);
+                        var typeProduct = reader1.GetString(10);
+                        Coupon coupon = new Coupon { Id = id, Code = code, Quantity = quantity, Worth = worth, Minimum = minimum, Maximum = maximum, Describe = describe, From = from, To = to, Type = type, ProductType = typeProduct };
                         coupons.Add(coupon);
                     }
                 }
@@ -207,11 +214,13 @@ namespace API.Repositories
                 connect1.Open();
                 var sql1 = new MySqlCommand();
                 sql1.Connection = connect1;
-                string queryString1 = "UPDATE tbl_coupon SET Code = @code, Quantity = @quantity, Worth = @worth, DescribeInfor = @describe, CouponFrom = @from, CouponTo = @to, CouponType = @type, ProductType = @productType WHERE Id = @id";
+                string queryString1 = "UPDATE tbl_coupon SET Code = @code, Quantity = @quantity, Worth = @worth, Minimum = @minimum, Maximum = @maximum, DescribeInfor = @describe, CouponFrom = @from, CouponTo = @to, CouponType = @type, ProductType = @productType WHERE Id = @id";
                 sql1.Parameters.AddWithValue("@id", coupon.Id);
                 sql1.Parameters.AddWithValue("@code", coupon.Code);
                 sql1.Parameters.AddWithValue("@quantity", coupon.Quantity);
                 sql1.Parameters.AddWithValue("@worth", coupon.Worth);
+                sql1.Parameters.AddWithValue("@minimum", coupon.Minimum);
+                sql1.Parameters.AddWithValue("@maximum", coupon.Maximum);
                 sql1.Parameters.AddWithValue("@describe", coupon.Describe);
                 sql1.Parameters.AddWithValue("@from", fr);
                 sql1.Parameters.AddWithValue("@to", t);
@@ -271,12 +280,14 @@ namespace API.Repositories
                         var code = reader1.GetString(1);
                         var quantity = reader1.GetInt32(2);
                         var worth = reader1.GetString(3);
-                        var describe = reader1.GetString(4);
-                        var from = reader1.GetDateTime(5);
-                        var to = reader1.GetDateTime(6);
-                        var type = reader1.GetString(7);
-                        var typeProduct = reader1.GetString(8);
-                        Coupon coupon = new Coupon { Id = id, Code = code, Quantity = quantity, Worth = worth, Describe = describe, From = from, To = to, Type = type, ProductType = typeProduct };
+                        var minimum = reader1.GetString(4);
+                        var maximum = reader1.GetString(5);
+                        var describe = reader1.GetString(6);
+                        var from = reader1.GetDateTime(7);
+                        var to = reader1.GetDateTime(8);
+                        var type = reader1.GetString(9);
+                        var typeProduct = reader1.GetString(10);
+                        Coupon coupon = new Coupon { Id = id, Code = code, Quantity = quantity, Worth = worth, Minimum = minimum, Maximum = maximum, Describe = describe, From = from, To = to, Type = type, ProductType = typeProduct };
                         coupons.Add(coupon);
                     }
                 }
@@ -342,12 +353,14 @@ namespace API.Repositories
                         var code = reader1.GetString(1);
                         var quantity = reader1.GetInt32(2);
                         var worth = reader1.GetString(3);
-                        var describe = reader1.GetString(4);
-                        var from = reader1.GetDateTime(5);
-                        var to = reader1.GetDateTime(6);
-                        var type = reader1.GetString(7);
-                        var typeProduct = reader1.GetString(8);
-                        Coupon coupon = new Coupon { Id = id, Code = code, Quantity = quantity, Worth = worth, Describe = describe, From = from, To = to, Type = type, ProductType = typeProduct };
+                        var minimum = reader1.GetString(4);
+                        var maximum = reader1.GetString(5);
+                        var describe = reader1.GetString(6);
+                        var from = reader1.GetDateTime(7);
+                        var to = reader1.GetDateTime(8);
+                        var type = reader1.GetString(9);
+                        var typeProduct = reader1.GetString(10);
+                        Coupon coupon = new Coupon { Id = id, Code = code, Quantity = quantity, Worth = worth, Minimum = minimum, Maximum = maximum, Describe = describe, From = from, To = to, Type = type, ProductType = typeProduct };
                         coupons.Add(coupon);
                     }
                 }
@@ -386,7 +399,7 @@ namespace API.Repositories
                 connect.Open();
                 var command = new MySqlCommand();
                 command.Connection = connect;
-                command.CommandText = "SELECT COUNT(c.id) FROM tbl_coupon AS c, tbl_user AS u, tbl_shop AS s WHERE u.Id = s.IdUser AND s.Id = c.IdShop AND u.Id = @id AND c.CouponFrom >= @from AND c.CouponTo <= @to";
+                command.CommandText = "SELECT COUNT(c.id) FROM tbl_coupon AS c, tbl_user AS u, tbl_shop AS s WHERE u.Id = s.IdUser AND s.Id = c.IdShop AND u.Id = @id AND (( CouponTo >= @to AND CouponFrom <= @to ) OR ( CouponTo <= @to AND CouponTo >= @from ))";
                 command.Parameters.AddWithValue("@id", uId);
                 command.Parameters.AddWithValue("@from", fr);
                 command.Parameters.AddWithValue("@to", t);
@@ -402,7 +415,7 @@ namespace API.Repositories
                 connect1.Open();
                 var command1 = new MySqlCommand();
                 command1.Connection = connect1;
-                command1.CommandText = "SELECT DISTINCT c.* FROM tbl_coupon AS c, tbl_shop AS s, tbl_user AS u WHERE u.Id = s.IdUser AND s.Id = c.IdShop AND u.Id = @id AND c.CouponFrom >= @from AND c.CouponTo <= @to ORDER BY c.CouponFrom " + direction + " LIMIT @pageNum, @perPage";
+                command1.CommandText = "SELECT DISTINCT c.* FROM tbl_coupon AS c, tbl_shop AS s, tbl_user AS u WHERE u.Id = s.IdUser AND s.Id = c.IdShop AND u.Id = @id AND (( CouponTo >= @to AND CouponFrom <= @to ) OR ( CouponTo <= @to AND CouponTo >= @from )) ORDER BY c.CouponFrom " + direction + " LIMIT @pageNum, @perPage";
                 command1.Parameters.AddWithValue("@pageNum", (int)(pageNum * perPage) - perPage);
                 command1.Parameters.AddWithValue("@perPage", (int)perPage);
                 command1.Parameters.AddWithValue("@from", fr);
@@ -417,12 +430,14 @@ namespace API.Repositories
                         var code = reader1.GetString(1);
                         var quantity = reader1.GetInt32(2);
                         var worth = reader1.GetString(3);
-                        var describe = reader1.GetString(4);
-                        var fromm = reader1.GetDateTime(5);
-                        var too = reader1.GetDateTime(6);
-                        var type = reader1.GetString(7);
-                        var typeProduct = reader1.GetString(8);
-                        Coupon coupon = new Coupon { Id = id, Code = code, Quantity = quantity, Worth = worth, Describe = describe, From = fromm, To = too, Type = type, ProductType = typeProduct };
+                        var minimum = reader1.GetString(4);
+                        var maximum = reader1.GetString(5);
+                        var describe = reader1.GetString(6);
+                        var fromm = reader1.GetDateTime(7);
+                        var too = reader1.GetDateTime(8);
+                        var type = reader1.GetString(9);
+                        var typeProduct = reader1.GetString(10);
+                        Coupon coupon = new Coupon { Id = id, Code = code, Quantity = quantity, Worth = worth, Minimum = minimum, Maximum = maximum, Describe = describe, From = fromm, To = too, Type = type, ProductType = typeProduct };
                         coupons.Add(coupon);
                     }
                 }
@@ -456,11 +471,16 @@ namespace API.Repositories
                 connect1.Open();
                 MySqlCommand sql = new MySqlCommand();
                 sql.Connection = connect1;
-                sql.CommandText = "INSERT INTO tbl_coupon (Id, Code, Quantity, Worth, DescribeInfor, CouponFrom, CouponTo, CouponType, ProductType) VALUES (@id, @code, @quantity, @worth, @describe, @from, @to, @cType, @pType)";
+                //sql.CommandText = "INSERT INTO tbl_coupon (Id, Code, Quantity, Worth, DescribeInfor, CouponFrom, CouponTo, CouponType, ProductType) VALUES (@id, @code, @quantity, @worth, @describe, @from, @to, @cType, @pType)";
+                sql.CommandText = "INSERT INTO tbl_coupon (Id, Code, Quantity, Worth, Minimum, Maximum, DescribeInfor, CouponFrom, CouponTo, CouponType, ProductType) " +
+                    "SELECT * FROM (SELECT @id AS Id, @code AS Code, @quantity AS Quantity, @worth AS Worth, @minimum AS Minimum, @maximum AS Maximum, @describe AS DescribeInfor, @from AS CouponFrom, @to AS CouponTo, @cType AS CouponType, @pType AS ProductType) AS tmp" +
+                    " WHERE NOT EXISTS (SELECT Code FROM tbl_coupon WHERE Code = @code) LIMIT 1";
                 sql.Parameters.AddWithValue("@id", coupon.Id);
                 sql.Parameters.AddWithValue("@code", coupon.Code);
                 sql.Parameters.AddWithValue("@quantity", coupon.Quantity);
                 sql.Parameters.AddWithValue("@worth", coupon.Worth);
+                sql.Parameters.AddWithValue("@minimum", coupon.Minimum);
+                sql.Parameters.AddWithValue("@maximum", coupon.Maximum);
                 sql.Parameters.AddWithValue("@describe", coupon.Describe);
                 sql.Parameters.AddWithValue("@from", fr);
                 sql.Parameters.AddWithValue("@to", t);
@@ -515,12 +535,14 @@ namespace API.Repositories
                         var code = reader1.GetString(1);
                         var quantity = reader1.GetInt32(2);
                         var worth = reader1.GetString(3);
-                        var describe = reader1.GetString(4);
-                        var from = reader1.GetDateTime(5);
-                        var to = reader1.GetDateTime(6);
-                        var type = reader1.GetString(7);
-                        var typeProduct = reader1.GetString(8);
-                        Coupon coupon = new Coupon { Id = id, Code = code, Quantity = quantity, Worth = worth, Describe = describe, From = from, To = to, Type = type, ProductType = typeProduct };
+                        var minimum = reader1.GetString(4);
+                        var maximum = reader1.GetString(5);
+                        var describe = reader1.GetString(6);
+                        var from = reader1.GetDateTime(7);
+                        var to = reader1.GetDateTime(8);
+                        var type = reader1.GetString(9);
+                        var typeProduct = reader1.GetString(10);
+                        Coupon coupon = new Coupon { Id = id, Code = code, Quantity = quantity, Worth = worth, Minimum = minimum, Maximum = maximum, Describe = describe, From = from, To = to, Type = type, ProductType = typeProduct };
                         coupons.Add(coupon);
                     }
                 }
@@ -584,12 +606,14 @@ namespace API.Repositories
                         var code = reader1.GetString(1);
                         var quantity = reader1.GetInt32(2);
                         var worth = reader1.GetString(3);
-                        var describe = reader1.GetString(4);
-                        var from = reader1.GetDateTime(5);
-                        var to = reader1.GetDateTime(6);
-                        var type = reader1.GetString(7);
-                        var typeProduct = reader1.GetString(8);
-                        Coupon coupon = new Coupon { Id = id, Code = code, Quantity = quantity, Worth = worth, Describe = describe, From = from, To = to, Type = type, ProductType = typeProduct };
+                        var minimum = reader1.GetString(4);
+                        var maximum = reader1.GetString(5);
+                        var describe = reader1.GetString(6);
+                        var from = reader1.GetDateTime(7);
+                        var to = reader1.GetDateTime(8);
+                        var type = reader1.GetString(9);
+                        var typeProduct = reader1.GetString(10);
+                        Coupon coupon = new Coupon { Id = id, Code = code, Quantity = quantity, Worth = worth, Minimum = minimum, Maximum = maximum, Describe = describe, From = from, To = to, Type = type, ProductType = typeProduct };
                         coupons.Add(coupon);
                     }
                 }
@@ -653,12 +677,14 @@ namespace API.Repositories
                         var code = reader1.GetString(1);
                         var quantity = reader1.GetInt32(2);
                         var worth = reader1.GetString(3);
-                        var describe = reader1.GetString(4);
-                        var from = reader1.GetDateTime(5);
-                        var to = reader1.GetDateTime(6);
-                        var type = reader1.GetString(7);
-                        var typeProduct = reader1.GetString(8);
-                        Coupon coupon = new Coupon { Id = id, Code = code, Quantity = quantity, Worth = worth, Describe = describe, From = from, To = to, Type = type, ProductType = typeProduct };
+                        var minimum = reader1.GetString(4);
+                        var maximum = reader1.GetString(5);
+                        var describe = reader1.GetString(6);
+                        var from = reader1.GetDateTime(7);
+                        var to = reader1.GetDateTime(8);
+                        var type = reader1.GetString(9);
+                        var typeProduct = reader1.GetString(10);
+                        Coupon coupon = new Coupon { Id = id, Code = code, Quantity = quantity, Worth = worth, Minimum = minimum, Maximum = maximum, Describe = describe, From = from, To = to, Type = type, ProductType = typeProduct };
                         coupons.Add(coupon);
                     }
                 }
@@ -697,7 +723,7 @@ namespace API.Repositories
                 connect.Open();
                 var command = new MySqlCommand();
                 command.Connection = connect;
-                command.CommandText = "SELECT COUNT(Id) FROM tbl_coupon WHERE CouponFrom >= @from AND CouponTo <= @to AND IdShop IS NULL";
+                command.CommandText = "SELECT COUNT(Id) FROM tbl_coupon WHERE (( CouponTo >= @to AND CouponFrom <= @to ) OR ( CouponTo <= @to AND CouponTo >= @from )) AND IdShop IS NULL";
                 command.Parameters.AddWithValue("@from", fr);
                 command.Parameters.AddWithValue("@to", t);
                 await using var reader = command.ExecuteReader();
@@ -712,7 +738,7 @@ namespace API.Repositories
                 connect1.Open();
                 var command1 = new MySqlCommand();
                 command1.Connection = connect1;
-                command1.CommandText = "SELECT DISTINCT * FROM tbl_coupon WHERE CouponFrom >= @from AND CouponTo <= @to AND IdShop IS NULL ORDER BY CouponFrom " + direction + " LIMIT @pageNum, @perPage";
+                command1.CommandText = "SELECT DISTINCT * FROM tbl_coupon WHERE (( CouponTo >= @to AND CouponFrom <= @to ) OR ( CouponTo <= @to AND CouponTo >= @from )) AND IdShop IS NULL ORDER BY CouponFrom " + direction + " LIMIT @pageNum, @perPage";
                 command1.Parameters.AddWithValue("@pageNum", (int)(pageNum * perPage) - perPage);
                 command1.Parameters.AddWithValue("@perPage", (int)perPage);
                 command1.Parameters.AddWithValue("@from", fr);
@@ -726,12 +752,14 @@ namespace API.Repositories
                         var code = reader1.GetString(1);
                         var quantity = reader1.GetInt32(2);
                         var worth = reader1.GetString(3);
-                        var describe = reader1.GetString(4);
-                        var fromm = reader1.GetDateTime(5);
-                        var too = reader1.GetDateTime(6);
-                        var type = reader1.GetString(7);
-                        var typeProduct = reader1.GetString(8);
-                        Coupon coupon = new Coupon { Id = id, Code = code, Quantity = quantity, Worth = worth, Describe = describe, From = fromm, To = too, Type = type, ProductType = typeProduct };
+                        var minimum = reader1.GetString(4);
+                        var maximum = reader1.GetString(5);
+                        var describe = reader1.GetString(6);
+                        var fromm = reader1.GetDateTime(7);
+                        var too = reader1.GetDateTime(8);
+                        var type = reader1.GetString(9);
+                        var typeProduct = reader1.GetString(10);
+                        Coupon coupon = new Coupon { Id = id, Code = code, Quantity = quantity, Worth = worth, Minimum = minimum, Maximum = maximum, Describe = describe, From = fromm, To = too, Type = type, ProductType = typeProduct };
                         coupons.Add(coupon);
                     }
                 }
@@ -810,6 +838,98 @@ namespace API.Repositories
                 return 0;
             }
             return total;
+        }
+
+        public async Task<List<Coupon>> GetCouponOfShopAndProductType(string sId, string pType, string cost)
+        {
+            MySqlConnection connect = conn.ConnectDB();
+            List<Coupon> coupons = new List<Coupon>();
+            try
+            {
+                DateTime n = DateTime.UtcNow;
+                string now = n.ToString("yyyy-MM-dd");
+                connect.Open();
+                var command = new MySqlCommand();
+                command.Connection = connect;
+                command.CommandText = "SELECT * FROM tbl_coupon WHERE IdShop = @sId AND ProductType = @pType AND CouponFrom <= @now AND CouponTo >= @now AND Minimum <= @cost";
+                command.Parameters.AddWithValue("@sId", sId);
+                command.Parameters.AddWithValue("@pType", pType);
+                command.Parameters.AddWithValue("@now", now);
+                command.Parameters.AddWithValue("@cost", Int32.Parse(cost));
+                await using var reader = command.ExecuteReader();
+                if (reader.HasRows)
+                {
+                    while (reader.Read())
+                    {
+                        var id = reader.GetString(0);
+                        var code = reader.GetString(1);
+                        var quantity = reader.GetInt32(2);
+                        var worth = reader.GetString(3);
+                        var minimum = reader.GetString(4);
+                        var maximum = reader.GetString(5);
+                        var describe = reader.GetString(6);
+                        var fromm = reader.GetDateTime(7);
+                        var too = reader.GetDateTime(8);
+                        var type = reader.GetString(9);
+                        var typeProduct = reader.GetString(10);
+                        Coupon coupon = new Coupon { Id = id, Code = code, Quantity = quantity, Worth = worth, Minimum = minimum, Maximum = maximum, Describe = describe, From = fromm, To = too, Type = type, ProductType = typeProduct };
+                        coupons.Add(coupon);
+                    }
+                }
+                connect.Close();
+            }
+            catch (Exception ex)
+            {
+                connect.Close();
+                return null;
+            }
+            return coupons;
+        }
+
+        public async Task<List<Coupon>> GetCouponByProductType(string pType, string cType, string cost)
+        {
+            MySqlConnection connect = conn.ConnectDB();
+            List<Coupon> coupons = new List<Coupon>();
+            try
+            {
+                DateTime n = DateTime.UtcNow;
+                string now = n.ToString("yyyy-MM-dd");
+                connect.Open();
+                var command = new MySqlCommand();
+                command.Connection = connect;
+                command.CommandText = "SELECT * FROM tbl_coupon WHERE IdShop IS NULL AND ProductType = @pType AND CouponFrom <= @now AND CouponTo >= @now AND Minimum <= @cost AND CouponType = @cType";
+                command.Parameters.AddWithValue("@pType", pType);
+                command.Parameters.AddWithValue("@cType", cType);
+                command.Parameters.AddWithValue("@now", now);
+                command.Parameters.AddWithValue("@cost", Int32.Parse(cost));
+                await using var reader = command.ExecuteReader();
+                if (reader.HasRows)
+                {
+                    while (reader.Read())
+                    {
+                        var id = reader.GetString(0);
+                        var code = reader.GetString(1);
+                        var quantity = reader.GetInt32(2);
+                        var worth = reader.GetString(3);
+                        var minimum = reader.GetString(4);
+                        var maximum = reader.GetString(5);
+                        var describe = reader.GetString(6);
+                        var fromm = reader.GetDateTime(7);
+                        var too = reader.GetDateTime(8);
+                        var type = reader.GetString(9);
+                        var typeProduct = reader.GetString(10);
+                        Coupon coupon = new Coupon { Id = id, Code = code, Quantity = quantity, Worth = worth, Minimum = minimum, Maximum = maximum, Describe = describe, From = fromm, To = too, Type = type, ProductType = typeProduct };
+                        coupons.Add(coupon);
+                    }
+                }
+                connect.Close();
+            }
+            catch (Exception ex)
+            {
+                connect.Close();
+                return null;
+            }
+            return coupons;
         }
     }
 }

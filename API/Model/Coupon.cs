@@ -34,6 +34,23 @@
 			set { _Worth = value; }
 		}
 
+		private string _Minimum;
+
+		public string Minimum
+		{
+			get { return _Minimum; }
+			set { _Minimum = value; }
+		}
+		
+		private string _Maximum;
+
+		public string Maximum
+		{
+			get { return _Maximum; }
+			set { _Maximum = value; }
+		}
+
+
 		private string _Describe;
 
 		public string Describe

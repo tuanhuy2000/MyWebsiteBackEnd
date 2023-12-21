@@ -71,7 +71,8 @@ namespace API.Repositories
                 connect.Open();
                 MySqlCommand sql = new MySqlCommand();
                 sql.Connection = connect;
-                sql.CommandText = "INSERT INTO tbl_user (Id, Name, PhoneNumber, Email, UserName, Password, Role) VALUES (@Id, @Name, @PhoneNumber, @Email, @UserName, @Password, @Role)";
+                //sql.CommandText = "INSERT INTO tbl_user (Id, Name, PhoneNumber, Email, UserName, Password, Role) VALUES (@Id, @Name, @PhoneNumber, @Email, @UserName, @Password, @Role)";
+                sql.CommandText = "INSERT INTO tbl_user (Id, Name, PhoneNumber, Email, UserName, Password, Role) SELECT * FROM (SELECT @Id AS Id, @Name AS Name, @PhoneNumber AS PhoneNumber, @Email AS Email, @UserName AS UserName, @Password AS Password, @Role AS Role) AS tmp WHERE NOT EXISTS (SELECT UserName FROM tbl_user WHERE UserName = @UserName) LIMIT 1";
                 sql.Parameters.AddWithValue("@Id", user.Id);
                 sql.Parameters.AddWithValue("@Name", user.Name);
                 sql.Parameters.AddWithValue("@PhoneNumber", user.PhoneNumber);
@@ -223,7 +224,7 @@ namespace API.Repositories
                 _configuration["Jwt:Issuer"],
                 _configuration["Jwt:Audience"],
                 claims,
-                expires: DateTime.UtcNow.AddSeconds(10),
+                expires: DateTime.UtcNow.AddMinutes(20),
                 signingCredentials: signIn
                 );
             return new JwtSecurityTokenHandler().WriteToken(token);
@@ -447,6 +448,7 @@ namespace API.Repositories
             MySqlConnection connect6 = conn.ConnectDB();
             MySqlConnection connect7 = conn.ConnectDB();
             MySqlConnection connect8 = conn.ConnectDB();
+            MySqlConnection connect9 = conn.ConnectDB();
             try
             {
                 // delete from tbl_cart_product when product in user's shop or user's cart
@@ -517,6 +519,15 @@ namespace API.Repositories
                 sql6.CommandText = queryString6;
                 sql6.ExecuteNonQuery();
                 connect6.Close();
+                // delete user's address
+                connect9.Open();
+                var sql9 = new MySqlCommand();
+                sql9.Connection = connect9;
+                string queryString9 = "DELETE a.* FROM tbl_address AS a, tbl_user AS u WHERE a.UserId = u.Id AND u.Id = @Id";
+                sql9.Parameters.AddWithValue("@Id", id);
+                sql9.CommandText = queryString9;
+                sql9.ExecuteNonQuery();
+                connect9.Close();
                 // delete user
                 connect7.Open();
                 var sql7 = new MySqlCommand();
@@ -657,6 +668,115 @@ namespace API.Repositories
                 return null;
             }
             return page;
+        }
+
+        public bool AddAddress(string id, Address address)
+        {
+            MySqlConnection connect = conn.ConnectDB();
+            try
+            {
+                connect.Open();
+                MySqlCommand sql = new MySqlCommand();
+                sql.Connection = connect;
+                sql.CommandText = "INSERT INTO tbl_address (Id, Name, Phone, Address, Type, UserId) VALUES (@Id, @Name, @Phone, @Address, @Type, @UserId)";
+                sql.Parameters.AddWithValue("@Id", address.Id);
+                sql.Parameters.AddWithValue("@Name", address.Name);
+                sql.Parameters.AddWithValue("@Phone", address.Phone);
+                sql.Parameters.AddWithValue("@Address", address.FullAddress);
+                sql.Parameters.AddWithValue("@Type", address.Type);
+                sql.Parameters.AddWithValue("@UserId", id);
+                int result = sql.ExecuteNonQuery();
+                connect.Close();
+                return result == 1 ? true : false;
+            }
+            catch (Exception ex)
+            {
+                connect.Close();
+                return false;
+            }
+        }
+
+        public async Task<List<Address>> GetAllAddress(string uId)
+        {
+            List<Address> list = new List<Address>();
+            MySqlConnection connect1 = conn.ConnectDB();
+            try
+            {
+                connect1.Open();
+                var command1 = new MySqlCommand();
+                command1.Connection = connect1;
+                command1.CommandText = "SELECT * FROM tbl_address WHERE UserId = @id";
+                command1.Parameters.AddWithValue("@id", uId);
+                await using var reader1 = command1.ExecuteReader();
+                if (reader1.HasRows)
+                {
+                    while (reader1.Read())
+                    {
+                        var id = reader1.GetString(0);
+                        var name = reader1.GetString(1);
+                        var phone = reader1.GetString("Phone");
+                        var fullAddress = reader1.GetString(3);
+                        var type = reader1.GetString(4);
+                        Address address = new Address { Id = id, Name = name, Phone = phone, FullAddress = fullAddress, Type = type };
+                        list.Add(address);
+                    }
+                }
+                connect1.Close();
+            }
+            catch (Exception ex)
+            {
+                connect1.Close();
+                return null;
+            }
+            return list;
+        }
+
+        public int ChangeAddress(Address address)
+        {
+            MySqlConnection connect = conn.ConnectDB();
+            try
+            {
+                connect.Open();
+                var sql = new MySqlCommand();
+                sql.Connection = connect;
+                string queryString = "UPDATE tbl_address SET Name = @name, Phone = @phone, Address = @fullAddress, Type = @type WHERE Id = @Id";
+                sql.Parameters.AddWithValue("@name", address.Name);
+                sql.Parameters.AddWithValue("@phone", address.Phone);
+                sql.Parameters.AddWithValue("@fullAddress", address.FullAddress);
+                sql.Parameters.AddWithValue("@type", address.Type);
+                sql.Parameters.AddWithValue("@Id", address.Id);
+                sql.CommandText = queryString;
+                int result = sql.ExecuteNonQuery();
+                connect.Close();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                connect.Close();
+                return 0;
+            }
+        }
+
+        public int DeleteAddress(string id)
+        {
+            MySqlConnection connect = conn.ConnectDB();
+            try
+            {
+                connect.Open();
+                var sql = new MySqlCommand();
+                sql.Connection = connect;
+                string queryString = "DELETE FROM tbl_address WHERE Id = @Id";
+                sql.Parameters.AddWithValue("@Id", id);
+                sql.CommandText = queryString;
+                int result = sql.ExecuteNonQuery();
+                connect.Close();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                connect.Close();
+                return 0;
+            }
         }
     }
 }

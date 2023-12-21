@@ -72,7 +72,7 @@ namespace API.Controllers
                     return Accepted(new APIResponse
                     {
                         Success = false,
-                        Message = "Create coupon fail"
+                        Message = "Create coupon fail or Invalid Code"
                     });
                 }
             }
@@ -310,7 +310,7 @@ namespace API.Controllers
                     return Accepted(new APIResponse
                     {
                         Success = false,
-                        Message = "Create coupon fail"
+                        Message = "Create coupon fail or Invalid Code"
                     });
                 }
             }
@@ -493,6 +493,74 @@ namespace API.Controllers
                     Success = true,
                     Data = count
                 });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
+
+        [Authorize("User")]
+        [HttpGet("ShopCouponByProductType")]
+        public async Task<IActionResult> GetShopCouponByProductType(string sId, string pType, string cost)
+        {
+            try
+            {
+                List<Coupon> list = await _couponRepository.GetCouponOfShopAndProductType(sId, pType, cost);
+                if (list != null)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Data = list
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "Cann't get coupons"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
+
+        [Authorize("User")]
+        [HttpGet("CouponByProductType")]
+        public async Task<IActionResult> GetCouponByProductType(string pType, string cType, string cost)
+        {
+            try
+            {
+                List<Coupon> list = await _couponRepository.GetCouponByProductType(pType, cType, cost);
+                if (list != null)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                        Data = list
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "Cann't get coupons"
+                    });
+                }
             }
             catch (Exception ex)
             {
