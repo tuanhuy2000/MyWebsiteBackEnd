@@ -18,9 +18,9 @@
             set { _Name = value; }
         }
 
-        private int _Price;
+        private double _Price;
 
-        public int Price
+        public double Price
         {
             get { return _Price; }
             set { _Price = value; }
@@ -40,14 +40,6 @@
         {
             get { return _Information; }
             set { _Information = value; }
-        }
-
-        private string _Address;
-
-        public string Address
-        {
-            get { return _Address; }
-            set { _Address = value; }
         }
 
         private string _Type;

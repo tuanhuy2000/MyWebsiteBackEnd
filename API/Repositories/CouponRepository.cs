@@ -851,11 +851,11 @@ namespace API.Repositories
                 connect.Open();
                 var command = new MySqlCommand();
                 command.Connection = connect;
-                command.CommandText = "SELECT * FROM tbl_coupon WHERE IdShop = @sId AND ProductType = @pType AND CouponFrom <= @now AND CouponTo >= @now AND Minimum <= @cost";
+                command.CommandText = "SELECT * FROM tbl_coupon WHERE IdShop = @sId AND ProductType = @pType AND CouponFrom <= @now AND CouponTo >= @now AND Minimum <= @cost AND Quantity > 0";
                 command.Parameters.AddWithValue("@sId", sId);
                 command.Parameters.AddWithValue("@pType", pType);
                 command.Parameters.AddWithValue("@now", now);
-                command.Parameters.AddWithValue("@cost", Int32.Parse(cost));
+                command.Parameters.AddWithValue("@cost", Double.Parse(cost));
                 await using var reader = command.ExecuteReader();
                 if (reader.HasRows)
                 {
@@ -897,11 +897,11 @@ namespace API.Repositories
                 connect.Open();
                 var command = new MySqlCommand();
                 command.Connection = connect;
-                command.CommandText = "SELECT * FROM tbl_coupon WHERE IdShop IS NULL AND ProductType = @pType AND CouponFrom <= @now AND CouponTo >= @now AND Minimum <= @cost AND CouponType = @cType";
+                command.CommandText = "SELECT * FROM tbl_coupon WHERE IdShop IS NULL AND ProductType = @pType AND CouponFrom <= @now AND CouponTo >= @now AND Minimum <= @cost AND CouponType = @cType AND Quantity > 0";
                 command.Parameters.AddWithValue("@pType", pType);
                 command.Parameters.AddWithValue("@cType", cType);
                 command.Parameters.AddWithValue("@now", now);
-                command.Parameters.AddWithValue("@cost", Int32.Parse(cost));
+                command.Parameters.AddWithValue("@cost", Double.Parse(cost));
                 await using var reader = command.ExecuteReader();
                 if (reader.HasRows)
                 {
@@ -918,7 +918,7 @@ namespace API.Repositories
                         var too = reader.GetDateTime(8);
                         var type = reader.GetString(9);
                         var typeProduct = reader.GetString(10);
-                        Coupon coupon = new Coupon { Id = id, Code = code, Quantity = quantity, Worth = worth, Minimum = minimum, Maximum = maximum, Describe = describe, From = fromm, To = too, Type = type, ProductType = typeProduct };
+                        Coupon coupon = new() { Id = id, Code = code, Quantity = quantity, Worth = worth, Minimum = minimum, Maximum = maximum, Describe = describe, From = fromm, To = too, Type = type, ProductType = typeProduct };
                         coupons.Add(coupon);
                     }
                 }

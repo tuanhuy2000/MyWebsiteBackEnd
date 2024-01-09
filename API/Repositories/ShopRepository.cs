@@ -34,9 +34,10 @@ namespace API.Repositories
                     {
                         var idShop = reader.GetString(0);
                         var name = reader.GetString(1);
+                        var address = reader.GetString(2);
                         byte[] imageBytes = (byte[])reader["Avatar"];
                         string avt = Convert.ToBase64String(imageBytes);
-                        shop = new Shop { Id = idShop, Name = name, Avatar = avt };
+                        shop = new Shop { Id = idShop, Name = name, Address = address, Avatar = avt };
                         break;
                     }
                 }
@@ -65,9 +66,10 @@ namespace API.Repositories
                 connect.Open();
                 MySqlCommand sql = new MySqlCommand();
                 sql.Connection = connect;
-                sql.CommandText = "INSERT INTO tbl_shop (Id, Name, Avatar, IdUser) VALUES (@Id, @Name, @Avatar, @IdUser)";
+                sql.CommandText = "INSERT INTO tbl_shop (Id, Name, Address, Avatar, IdUser) VALUES (@Id, @Name, @Address, @Avatar, @IdUser)";
                 sql.Parameters.AddWithValue("@Id", shop.Id);
                 sql.Parameters.AddWithValue("@Name", shop.Name);
+                sql.Parameters.AddWithValue("@Address", shop.Address);
                 sql.Parameters.AddWithValue("@Avatar", bitmapData);
                 sql.Parameters.AddWithValue("@IdUser", id);
                 int result = sql.ExecuteNonQuery();
@@ -91,8 +93,9 @@ namespace API.Repositories
                 connect.Open();
                 var sql = new MySqlCommand();
                 sql.Connection = connect;
-                string queryString = "UPDATE tbl_shop SET Name = @name, Avatar = @avatar WHERE IdUser = @Id";
+                string queryString = "UPDATE tbl_shop SET Name = @name, Address = @address, Avatar = @avatar WHERE IdUser = @Id";
                 sql.Parameters.AddWithValue("@name", shop.Name);
+                sql.Parameters.AddWithValue("@address", shop.Address);
                 sql.Parameters.AddWithValue("@avatar", bitmapData);
                 sql.Parameters.AddWithValue("@Id", id);
                 sql.CommandText = queryString;
@@ -197,9 +200,10 @@ namespace API.Repositories
                     {
                         var idShop = reader.GetString(0);
                         var name = reader.GetString(1);
+                        var address = reader.GetString(2);
                         byte[] imageBytes = (byte[])reader["Avatar"];
                         string avt = Convert.ToBase64String(imageBytes);
-                        shop = new Shop { Id = idShop, Name = name, Avatar = avt };
+                        shop = new Shop { Id = idShop, Name = name, Address = address, Avatar = avt };
                         break;
                     }
                 }

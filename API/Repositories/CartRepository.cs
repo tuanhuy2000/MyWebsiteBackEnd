@@ -94,14 +94,13 @@ namespace API.Repositories
                     {
                         var id = reader1.GetString(0);
                         var name = reader1.GetString(1);
-                        var price = reader1.GetInt32(2);
-                        var quantity = reader1.GetInt32(8);
+                        var price = reader1.GetDouble(2);
+                        var quantity = reader1.GetInt32(7);
                         var infor = reader1.GetString(4);
-                        var address = reader1.GetString(5);
-                        var type = reader1.GetString(6);
+                        var type = reader1.GetString(5);
                         ProductRepository _productRepository = new ProductRepository(new DBConnection());
                         List<string> img = await _productRepository.GetImgByIdProduct(id);
-                        Product product = new Product { Id = id, Name = name, Price = price, Quantity = quantity, Information = infor, Address = address, Type = type, Img = img };
+                        Product product = new Product { Id = id, Name = name, Price = price, Quantity = quantity, Information = infor, Type = type, Img = img };
                         list.Add(product);
                     }
                 }

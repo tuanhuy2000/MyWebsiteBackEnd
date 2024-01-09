@@ -60,7 +60,6 @@ namespace API.Repositories
         {
             MySqlConnection connect = conn.ConnectDB();
             MySqlConnection connect1 = conn.ConnectDB();
-            MySqlConnection connect2 = conn.ConnectDB();
             try
             {
                 string idShop = "";
@@ -88,13 +87,12 @@ namespace API.Repositories
                 connect1.Open();
                 MySqlCommand sql = new MySqlCommand();
                 sql.Connection = connect1;
-                sql.CommandText = "INSERT INTO tbl_product (Id, Name, Price, Quantity, Information, Address, Type, IdShop) VALUES (@id, @name, @price, @quantity, @infor, @address, @type, @idShop)";
+                sql.CommandText = "INSERT INTO tbl_product (Id, Name, Price, Quantity, Information, Type, IdShop) VALUES (@id, @name, @price, @quantity, @infor, @type, @idShop)";
                 sql.Parameters.AddWithValue("@id", product.Id);
                 sql.Parameters.AddWithValue("@name", product.Name);
                 sql.Parameters.AddWithValue("@price", product.Price);
                 sql.Parameters.AddWithValue("@quantity", product.Quantity);
                 sql.Parameters.AddWithValue("@infor", product.Information);
-                sql.Parameters.AddWithValue("@address", product.Address);
                 sql.Parameters.AddWithValue("@type", product.Type);
                 sql.Parameters.AddWithValue("@idShop", idShop);
                 int result = sql.ExecuteNonQuery();
@@ -178,12 +176,11 @@ namespace API.Repositories
                     {
                         var id = reader1.GetString(0);
                         var name = reader1.GetString(1);
-                        var price = reader1.GetInt32(2);
+                        var price = reader1.GetDouble(2);
                         var quantity = reader1.GetInt32(3);
                         var infor = reader1.GetString(4);
-                        var address = reader1.GetString(5);
-                        var type = reader1.GetString(6);
-                        Product product = new Product { Id = id, Name = name, Price = price, Quantity = quantity, Information = infor, Address = address, Type = type };
+                        var type = reader1.GetString(5);
+                        Product product = new Product { Id = id, Name = name, Price = price, Quantity = quantity, Information = infor, Type = type };
                         products.Add(product);
                     }
                 }
@@ -247,12 +244,11 @@ namespace API.Repositories
                     {
                         var id = reader1.GetString(0);
                         var name = reader1.GetString(1);
-                        var price = reader1.GetInt32(2);
+                        var price = reader1.GetDouble(2);
                         var quantity = reader1.GetInt32(3);
                         var infor = reader1.GetString(4);
-                        var address = reader1.GetString(5);
-                        var type = reader1.GetString(6);
-                        Product product = new Product { Id = id, Name = name, Price = price, Quantity = quantity, Information = infor, Address = address, Type = type };
+                        var type = reader1.GetString(5);
+                        Product product = new Product { Id = id, Name = name, Price = price, Quantity = quantity, Information = infor, Type = type };
                         products.Add(product);
                     }
                 }
@@ -386,13 +382,12 @@ namespace API.Repositories
                 connect1.Open();
                 var sql1 = new MySqlCommand();
                 sql1.Connection = connect1;
-                string queryString1 = "UPDATE tbl_product SET Name = @name, Price = @price, Quantity = @quantity, Information = @infor, Address = @address, Type = @type WHERE Id = @id";
+                string queryString1 = "UPDATE tbl_product SET Name = @name, Price = @price, Quantity = @quantity, Information = @infor, Type = @type WHERE Id = @id";
                 sql1.Parameters.AddWithValue("@id", product.Id);
                 sql1.Parameters.AddWithValue("@name", product.Name);
                 sql1.Parameters.AddWithValue("@price", product.Price);
                 sql1.Parameters.AddWithValue("@quantity", product.Quantity);
                 sql1.Parameters.AddWithValue("@infor", product.Information);
-                sql1.Parameters.AddWithValue("@address", product.Address);
                 sql1.Parameters.AddWithValue("@type", product.Type);
                 sql1.CommandText = queryString1;
                 int result = sql1.ExecuteNonQuery();
@@ -405,75 +400,6 @@ namespace API.Repositories
                 connect4.Close();
                 return 0;
             }
-        }
-
-        public async Task<Page> SearchProductOfUserByAddress(int pageNum, int perPage, string direction, string key, string uId)
-        {
-            List<Product> products = new List<Product>();
-            int total = 0;
-            int totalPages = 0;
-            Page page = null;
-            MySqlConnection connect = conn.ConnectDB();
-            MySqlConnection connect1 = conn.ConnectDB();
-            try
-            {
-                connect.Open();
-                var command = new MySqlCommand();
-                command.Connection = connect;
-                command.CommandText = "SELECT COUNT(p.id) FROM tbl_product AS p, tbl_user AS u, tbl_shop AS s WHERE u.Id = s.IdUser AND s.Id = p.IdShop AND u.Id = @id AND p.Address = @key";
-                command.Parameters.AddWithValue("@key", key);
-                command.Parameters.AddWithValue("@id", uId);
-                await using var reader = command.ExecuteReader();
-                if (reader.HasRows)
-                {
-                    while (reader.Read())
-                    {
-                        total = reader.GetInt32(0);
-                    }
-                }
-                connect.Close();
-                connect1.Open();
-                var command1 = new MySqlCommand();
-                command1.Connection = connect1;
-                command1.CommandText = "SELECT p.* FROM tbl_product AS p, tbl_shop AS s, tbl_user AS u WHERE u.Id = s.IdUser AND s.Id = p.IdShop AND u.Id = @id AND p.Address = @key ORDER BY Name " + direction + " LIMIT @pageNum, @perPage";
-                command1.Parameters.AddWithValue("@pageNum", (int)(pageNum * perPage) - perPage);
-                command1.Parameters.AddWithValue("@perPage", (int)perPage);
-                command1.Parameters.AddWithValue("@key", key);
-                command1.Parameters.AddWithValue("@id", uId);
-                await using var reader1 = command1.ExecuteReader();
-                if (reader1.HasRows)
-                {
-                    while (reader1.Read())
-                    {
-                        var id = reader1.GetString(0);
-                        var name = reader1.GetString(1);
-                        var price = reader1.GetInt32(2);
-                        var quantity = reader1.GetInt32(3);
-                        var infor = reader1.GetString(4);
-                        var address = reader1.GetString(5);
-                        var type = reader1.GetString(6);
-                        Product product = new Product { Id = id, Name = name, Price = price, Quantity = quantity, Information = infor, Address = address, Type = type };
-                        products.Add(product);
-                    }
-                }
-                connect1.Close();
-                if (((double)total / (double)perPage) % 1 == 0)
-                {
-                    totalPages = total / perPage;
-                }
-                else
-                {
-                    totalPages = (total / perPage) + 1;
-                }
-                page = new Page { PageNum = pageNum, PerPage = perPage, Total = total, TotalPages = totalPages, Data = products };
-            }
-            catch (Exception ex)
-            {
-                connect.Close();
-                connect1.Close();
-                return null;
-            }
-            return page;
         }
 
         public async Task<Page> SearchProductOfUserByType(int pageNum, int perPage, string direction, string key, string uId)
@@ -516,12 +442,11 @@ namespace API.Repositories
                     {
                         var id = reader1.GetString(0);
                         var name = reader1.GetString(1);
-                        var price = reader1.GetInt32(2);
+                        var price = reader1.GetDouble(2);
                         var quantity = reader1.GetInt32(3);
                         var infor = reader1.GetString(4);
-                        var address = reader1.GetString(5);
-                        var type = reader1.GetString(6);
-                        Product product = new Product { Id = id, Name = name, Price = price, Quantity = quantity, Information = infor, Address = address, Type = type };
+                        var type = reader1.GetString(5);
+                        Product product = new Product { Id = id, Name = name, Price = price, Quantity = quantity, Information = infor, Type = type };
                         products.Add(product);
                     }
                 }
@@ -611,13 +536,12 @@ namespace API.Repositories
                     {
                         var id = reader1.GetString(0);
                         var name = reader1.GetString(1);
-                        var price = reader1.GetInt32(2);
+                        var price = reader1.GetDouble(2);
                         var quantity = reader1.GetInt32(3);
                         var infor = reader1.GetString(4);
-                        var address = reader1.GetString(5);
-                        var type = reader1.GetString(6);
+                        var type = reader1.GetString(5);
                         List<string> img = await GetImgByIdProduct(id);
-                        Product product = new Product { Id = id, Name = name, Price = price, Quantity = quantity, Information = infor, Address = address, Type = type, Img = img };
+                        Product product = new Product { Id = id, Name = name, Price = price, Quantity = quantity, Information = infor, Type = type, Img = img };
                         products.Add(product);
                     }
                 }
@@ -641,7 +565,7 @@ namespace API.Repositories
             return page;
         }
 
-        public async Task<Page> SearchPageProduct(int pageNum, int perPage, string keyWord, string address, string type, string direction)
+        public async Task<Page> SearchPageProduct(int pageNum, int perPage, string keyWord, string type, string direction)
         {
             List<Product> products = new List<Product>();
             int total = 0;
@@ -654,9 +578,8 @@ namespace API.Repositories
                 connect.Open();
                 var command = new MySqlCommand();
                 command.Connection = connect;
-                command.CommandText = "SELECT COUNT(Id) FROM tbl_product WHERE Name LIKE @key AND Address LIKE @address AND Type LIKE @type";
+                command.CommandText = "SELECT COUNT(Id) FROM tbl_product WHERE Name LIKE @key AND Type LIKE @type";
                 command.Parameters.AddWithValue("@key", "%" + keyWord + "%");
-                command.Parameters.AddWithValue("@address", "%" + address + "%");
                 command.Parameters.AddWithValue("@type", "%" + type + "%");
                 await using var reader = command.ExecuteReader();
                 if (reader.HasRows)
@@ -670,11 +593,10 @@ namespace API.Repositories
                 connect1.Open();
                 var command1 = new MySqlCommand();
                 command1.Connection = connect1;
-                command1.CommandText = "SELECT * FROM tbl_product WHERE Name LIKE @key AND Address LIKE @address AND Type LIKE @type ORDER BY Price " + direction + " LIMIT @pageNum, @perPage";
+                command1.CommandText = "SELECT * FROM tbl_product WHERE Name LIKE @key AND Type LIKE @type ORDER BY Price " + direction + " LIMIT @pageNum, @perPage";
                 command1.Parameters.AddWithValue("@pageNum", (int)(pageNum * perPage) - perPage);
                 command1.Parameters.AddWithValue("@perPage", (int)perPage);
                 command1.Parameters.AddWithValue("@key", "%" + keyWord + "%");
-                command1.Parameters.AddWithValue("@address", "%" + address + "%");
                 command1.Parameters.AddWithValue("@type", "%" + type + "%");
                 await using var reader1 = command1.ExecuteReader();
                 if (reader1.HasRows)
@@ -683,13 +605,12 @@ namespace API.Repositories
                     {
                         var id = reader1.GetString(0);
                         var name = reader1.GetString(1);
-                        var price = reader1.GetInt32(2);
+                        var price = reader1.GetDouble(2);
                         var quantity = reader1.GetInt32(3);
                         var infor = reader1.GetString(4);
-                        var add = reader1.GetString(5);
-                        var ty = reader1.GetString(6);
+                        var ty = reader1.GetString(5);
                         List<string> img = await GetImgByIdProduct(id);
-                        Product product = new Product { Id = id, Name = name, Price = price, Quantity = quantity, Information = infor, Address = add, Type = ty, Img = img };
+                        Product product = new Product { Id = id, Name = name, Price = price, Quantity = quantity, Information = infor, Type = ty, Img = img };
                         products.Add(product);
                     }
                 }
@@ -781,13 +702,12 @@ namespace API.Repositories
                     {
                         var id = reader1.GetString(0);
                         var name = reader1.GetString(1);
-                        var price = reader1.GetInt32(2);
+                        var price = reader1.GetDouble(2);
                         var quantity = reader1.GetInt32(3);
                         var infor = reader1.GetString(4);
-                        var address = reader1.GetString(5);
-                        var type = reader1.GetString(6);
+                        var type = reader1.GetString(5);
                         List<string> img = await GetImgByIdProduct(id);
-                        Product product = new Product { Id = id, Name = name, Price = price, Quantity = quantity, Information = infor, Address = address, Type = type, Img = img };
+                        Product product = new Product { Id = id, Name = name, Price = price, Quantity = quantity, Information = infor, Type = type, Img = img };
                         products.Add(product);
                     }
                 }
@@ -811,7 +731,7 @@ namespace API.Repositories
             return page;
         }
 
-        public async Task<Page> SearchPageProductOfShop(int pageNum, int perPage, string keyWord, string address, string type, string direction, string idShop)
+        public async Task<Page> SearchPageProductOfShop(int pageNum, int perPage, string keyWord, string type, string direction, string idShop)
         {
             List<Product> products = new List<Product>();
             int total = 0;
@@ -824,9 +744,8 @@ namespace API.Repositories
                 connect.Open();
                 var command = new MySqlCommand();
                 command.Connection = connect;
-                command.CommandText = "SELECT COUNT(Id) FROM tbl_product WHERE Name LIKE @key AND Address LIKE @address AND Type LIKE @type AND IdShop = @id";
+                command.CommandText = "SELECT COUNT(Id) FROM tbl_product WHERE Name LIKE @key AND Type LIKE @type AND IdShop = @id";
                 command.Parameters.AddWithValue("@key", "%" + keyWord + "%");
-                command.Parameters.AddWithValue("@address", "%" + address + "%");
                 command.Parameters.AddWithValue("@type", "%" + type + "%");
                 command.Parameters.AddWithValue("@id", idShop);
                 await using var reader = command.ExecuteReader();
@@ -841,11 +760,10 @@ namespace API.Repositories
                 connect1.Open();
                 var command1 = new MySqlCommand();
                 command1.Connection = connect1;
-                command1.CommandText = "SELECT * FROM tbl_product WHERE Name LIKE @key AND Address LIKE @address AND Type LIKE @type AND IdShop = @id ORDER BY Price " + direction + " LIMIT @pageNum, @perPage";
+                command1.CommandText = "SELECT * FROM tbl_product WHERE Name LIKE @key AND Type LIKE @type AND IdShop = @id ORDER BY Price " + direction + " LIMIT @pageNum, @perPage";
                 command1.Parameters.AddWithValue("@pageNum", (int)(pageNum * perPage) - perPage);
                 command1.Parameters.AddWithValue("@perPage", (int)perPage);
                 command1.Parameters.AddWithValue("@key", "%" + keyWord + "%");
-                command1.Parameters.AddWithValue("@address", "%" + address + "%");
                 command1.Parameters.AddWithValue("@type", "%" + type + "%");
                 command1.Parameters.AddWithValue("@id", idShop);
                 await using var reader1 = command1.ExecuteReader();
@@ -855,13 +773,12 @@ namespace API.Repositories
                     {
                         var id = reader1.GetString(0);
                         var name = reader1.GetString(1);
-                        var price = reader1.GetInt32(2);
+                        var price = reader1.GetDouble(2);
                         var quantity = reader1.GetInt32(3);
                         var infor = reader1.GetString(4);
-                        var add = reader1.GetString(5);
-                        var ty = reader1.GetString(6);
+                        var ty = reader1.GetString(5);
                         List<string> img = await GetImgByIdProduct(id);
-                        Product product = new Product { Id = id, Name = name, Price = price, Quantity = quantity, Information = infor, Address = add, Type = ty, Img = img };
+                        Product product = new Product { Id = id, Name = name, Price = price, Quantity = quantity, Information = infor, Type = ty, Img = img };
                         products.Add(product);
                     }
                 }
@@ -902,13 +819,12 @@ namespace API.Repositories
                     while (reader.Read())
                     {
                         var name = reader.GetString(1);
-                        var price = reader.GetInt32(2);
+                        var price = reader.GetDouble(2);
                         var quantity = reader.GetInt32(3);
                         var infor = reader.GetString(4);
-                        var address = reader.GetString(5);
-                        var type = reader.GetString(6);
+                        var type = reader.GetString(5);
                         List<string> img = await GetImgByIdProduct(id);
-                        product = new Product { Id = id, Name = name, Price = price, Quantity = quantity, Information = infor, Address = address, Type = type, Img = img };
+                        product = new Product { Id = id, Name = name, Price = price, Quantity = quantity, Information = infor, Type = type, Img = img };
                     }
                 }
                 connect.Close();

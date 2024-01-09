@@ -254,39 +254,6 @@ namespace API.Controllers
             }
         }
 
-        [HttpGet("searchProductOfUserByAddress")]
-        public async Task<ActionResult<Page>> SearchProductPageOfUserByAddress(int pageNum, int perPage, string direction, string key, string id)
-        {
-            try
-            {
-                Page page = await _productRepository.SearchProductOfUserByAddress(pageNum, perPage, direction, key, id);
-                if (page != null)
-                {
-                    return Ok(new APIResponse
-                    {
-                        Success = true,
-                        Data = page
-                    });
-                }
-                else
-                {
-                    return Accepted(new APIResponse
-                    {
-                        Success = false,
-                        Message = "No product match"
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new APIResponse
-                {
-                    Success = false,
-                    Message = ex.Message,
-                });
-            }
-        }
-
         [HttpGet("searchProductOfUserByType")]
         public async Task<ActionResult<Page>> SearchProductPageOfUserByType(int pageNum, int perPage, string direction, string key, string id)
         {
@@ -377,11 +344,11 @@ namespace API.Controllers
         }
 
         [HttpGet("searchProduct")]
-        public async Task<ActionResult<Page>> SearchProductPage(int pageNum, int perPage, string? keyWord, string? address, string? type, string direction)
+        public async Task<ActionResult<Page>> SearchProductPage(int pageNum, int perPage, string? keyWord, string? type, string direction)
         {
             try
             {
-                Page page = await _productRepository.SearchPageProduct(pageNum, perPage, keyWord, address, type, direction);
+                Page page = await _productRepository.SearchPageProduct(pageNum, perPage, keyWord, type, direction);
                 if (page != null)
                 {
                     return Ok(new APIResponse
@@ -466,11 +433,11 @@ namespace API.Controllers
         }
 
         [HttpGet("searchProductOfShop")]
-        public async Task<ActionResult<Page>> SearchProductPageOfShop(int pageNum, int perPage, string? keyWord, string? address, string? type, string direction, string idShop)
+        public async Task<ActionResult<Page>> SearchProductPageOfShop(int pageNum, int perPage, string? keyWord, string? type, string direction, string idShop)
         {
             try
             {
-                Page page = await _productRepository.SearchPageProductOfShop(pageNum, perPage, keyWord, address, type, direction, idShop);
+                Page page = await _productRepository.SearchPageProductOfShop(pageNum, perPage, keyWord, type, direction, idShop);
                 if (page != null)
                 {
                     return Ok(new APIResponse

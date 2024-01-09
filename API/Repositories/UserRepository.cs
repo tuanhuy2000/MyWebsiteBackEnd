@@ -224,7 +224,7 @@ namespace API.Repositories
                 _configuration["Jwt:Issuer"],
                 _configuration["Jwt:Audience"],
                 claims,
-                expires: DateTime.UtcNow.AddMinutes(20),
+                expires: DateTime.UtcNow.AddMinutes(1),
                 signingCredentials: signIn
                 );
             return new JwtSecurityTokenHandler().WriteToken(token);
@@ -449,6 +449,7 @@ namespace API.Repositories
             MySqlConnection connect7 = conn.ConnectDB();
             MySqlConnection connect8 = conn.ConnectDB();
             MySqlConnection connect9 = conn.ConnectDB();
+            MySqlConnection connect10 = conn.ConnectDB();
             try
             {
                 // delete from tbl_cart_product when product in user's shop or user's cart
@@ -519,6 +520,15 @@ namespace API.Repositories
                 sql6.CommandText = queryString6;
                 sql6.ExecuteNonQuery();
                 connect6.Close();
+                // delete user's order
+                connect10.Open();
+                var sql10 = new MySqlCommand();
+                sql10.Connection = connect10;
+                string queryString10 = "DELETE FROM tbl_order WHERE Orderer = @Id";
+                sql10.Parameters.AddWithValue("@Id", id);
+                sql10.CommandText = queryString10;
+                sql10.ExecuteNonQuery();
+                connect10.Close();
                 // delete user's address
                 connect9.Open();
                 var sql9 = new MySqlCommand();

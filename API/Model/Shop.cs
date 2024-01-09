@@ -18,6 +18,15 @@
 			set { _Name = value; }
 		}
 
+		private string _Address;
+
+		public string Address
+		{
+			get { return _Address; }
+			set { _Address = value; }
+		}
+
+
 		private string _Avatar;
 
 		public string Avatar
