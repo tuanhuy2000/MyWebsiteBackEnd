@@ -116,9 +116,19 @@ namespace API.Repositories
             MySqlConnection connect2 = conn.ConnectDB();
             MySqlConnection connect3 = conn.ConnectDB();
             MySqlConnection connect4 = conn.ConnectDB();
+            MySqlConnection connect5 = conn.ConnectDB();
             MySqlConnection connect6 = conn.ConnectDB();
             try
             {
+                //delete from tbl_order when order in user's shop
+                connect5.Open();
+                var sql5 = new MySqlCommand();
+                sql5.Connection = connect5;
+                string queryString5 = "DELETE o.* FROM tbl_order As o, tbl_user AS u, tbl_shop AS s WHERE s.IdUser = u.Id AND u.Id = @Id AND o.IdShop = s.Id";
+                sql5.Parameters.AddWithValue("@Id", id);
+                sql5.CommandText = queryString5;
+                sql5.ExecuteNonQuery();
+                connect5.Close();
                 // delete from tbl_cart_product when product in user's shop or user's cart
                 connect1.Open();
                 var sql1 = new MySqlCommand();
@@ -221,5 +231,6 @@ namespace API.Repositories
             connect.Close();
             return shop;
         }
+
     }
 }

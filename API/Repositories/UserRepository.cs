@@ -450,8 +450,18 @@ namespace API.Repositories
             MySqlConnection connect8 = conn.ConnectDB();
             MySqlConnection connect9 = conn.ConnectDB();
             MySqlConnection connect10 = conn.ConnectDB();
+            MySqlConnection connect11 = conn.ConnectDB();
             try
             {
+                //delete from tbl_order when order in user's shop
+                connect11.Open();
+                var sql11 = new MySqlCommand();
+                sql11.Connection = connect11;
+                string queryString11 = "DELETE o.* FROM tbl_order As o, tbl_user AS u, tbl_shop AS s WHERE s.IdUser = u.Id AND u.Id = @Id AND o.IdShop = s.Id";
+                sql11.Parameters.AddWithValue("@Id", id);
+                sql11.CommandText = queryString11;
+                sql11.ExecuteNonQuery();
+                connect11.Close();
                 // delete from tbl_cart_product when product in user's shop or user's cart
                 connect1.Open();
                 var sql1 = new MySqlCommand();

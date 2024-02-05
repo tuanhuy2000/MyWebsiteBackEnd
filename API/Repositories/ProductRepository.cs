@@ -513,7 +513,7 @@ namespace API.Repositories
                 connect.Open();
                 var command = new MySqlCommand();
                 command.Connection = connect;
-                command.CommandText = "SELECT COUNT(Id) FROM tbl_product";
+                command.CommandText = "SELECT COUNT(Id) FROM tbl_product WHERE Quantity > 0";
                 await using var reader = command.ExecuteReader();
                 if (reader.HasRows)
                 {
@@ -526,7 +526,7 @@ namespace API.Repositories
                 connect1.Open();
                 var command1 = new MySqlCommand();
                 command1.Connection = connect1;
-                command1.CommandText = "SELECT * FROM tbl_product ORDER BY Id LIMIT @pageNum, @perPage";
+                command1.CommandText = "SELECT * FROM tbl_product WHERE Quantity > 0 ORDER BY Id LIMIT @pageNum, @perPage";
                 command1.Parameters.AddWithValue("@pageNum", (int)(pageNum * perPage) - perPage);
                 command1.Parameters.AddWithValue("@perPage", (int)perPage);
                 await using var reader1 = command1.ExecuteReader();

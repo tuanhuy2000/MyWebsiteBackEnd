@@ -26,12 +26,45 @@
 			set { _TotalCost = value; }
 		}
 
-		private double _Discount;
+        private double _Discount;
 
-		public double Discount
+        public double Discount
+        {
+            get { return _Discount; }
+            set { _Discount = value; }
+        }
+
+        private string _Status;
+
+		public string Status
 		{
-			get { return _Discount; }
-			set { _Discount = value; }
+			get { return _Status; }
+			set { _Status = value; }
 		}
+
+		private string _ShippingWay;
+
+		public string ShippingWay
+		{
+			get { return _ShippingWay; }
+			set { _ShippingWay = value; }
+		}
+
+		private DateTime _OrderDate;
+
+		public DateTime OrderDate
+		{
+			get { return _OrderDate; }
+			set { _OrderDate = value; }
+		}
+
+		private DateTime _CompletionDate;
+
+		public DateTime CompletionDate
+		{
+			get { return _CompletionDate; }
+			set { _CompletionDate = value; }
+		}
+
 	}
 }
