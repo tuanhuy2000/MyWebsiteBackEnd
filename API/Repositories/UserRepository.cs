@@ -5,6 +5,8 @@ using MySqlConnector;
 using System;
 using System.Data;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.Mail;
+using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -62,37 +64,37 @@ namespace API.Repositories
         //    return users;
         //}
 
-        public bool Signin(User user)
+        public bool GetOTP(string email)
         {
             MySqlConnection connect = conn.ConnectDB();
             MySqlConnection connect1 = conn.ConnectDB();
             try
             {
+                connect1.Open();
+                MySqlCommand sql1 = new MySqlCommand();
+                sql1.Connection = connect1;
+                sql1.CommandText = "DELETE FROM tbl_otp WHERE Expired < UTC_TIMESTAMP()";
+                sql1.ExecuteNonQuery();
+                connect1.Close();
                 connect.Open();
                 MySqlCommand sql = new MySqlCommand();
                 sql.Connection = connect;
-                //sql.CommandText = "INSERT INTO tbl_user (Id, Name, PhoneNumber, Email, UserName, Password, Role) VALUES (@Id, @Name, @PhoneNumber, @Email, @UserName, @Password, @Role)";
-                sql.CommandText = "INSERT INTO tbl_user (Id, Name, PhoneNumber, Email, UserName, Password, Role) SELECT * FROM (SELECT @Id AS Id, @Name AS Name, @PhoneNumber AS PhoneNumber, @Email AS Email, @UserName AS UserName, @Password AS Password, @Role AS Role) AS tmp WHERE NOT EXISTS (SELECT UserName FROM tbl_user WHERE UserName = @UserName) LIMIT 1";
-                sql.Parameters.AddWithValue("@Id", user.Id);
-                sql.Parameters.AddWithValue("@Name", user.Name);
-                sql.Parameters.AddWithValue("@PhoneNumber", user.PhoneNumber);
-                sql.Parameters.AddWithValue("@Email", user.Email);
-                sql.Parameters.AddWithValue("@UserName", user.UserName);
-                sql.Parameters.AddWithValue("@Password", user.Password);
-                sql.Parameters.AddWithValue("@Role", user.Role);
+                sql.CommandText = "INSERT INTO tbl_otp (OTP, Expired) VALUES (@otp, @expired)";
+                Random rd = new Random();
+                string otp = rd.Next(100000, 999999).ToString();
+                sql.Parameters.AddWithValue("@otp", otp);
+                sql.Parameters.AddWithValue("@expired", DateTime.UtcNow.AddSeconds(120).ToString("yyyy-MM-dd HH:mm:ss"));
                 int result = sql.ExecuteNonQuery();
                 connect.Close();
-                connect1.Open();
-                var sql1 = new MySqlCommand();
-                sql1.Connection = connect1;
-                string queryString1 = "INSERT INTO tbl_cart(Id, IdUser) VALUES (@Id, @IdUser)";
-                sql1.Parameters.AddWithValue("@Id", Guid.NewGuid().ToString());
-                sql1.Parameters.AddWithValue("@IdUser", user.Id);
-                sql1.CommandText = queryString1;
-                int result1 = sql1.ExecuteNonQuery();
-                connect1.Close();
-                if (result1 == 1 && result == 1)
+                if (result == 1)
                 {
+                    var smtpClient = new SmtpClient("smtp.gmail.com")
+                    {
+                        Port = 587,
+                        Credentials = new NetworkCredential("truongtuanhuy1@gmail.com", "yftj fzbz befn plhm"),
+                        EnableSsl = true,
+                    };
+                    smtpClient.Send("truongtuanhuy1@gmail.com", email, "OTP Code", string.Format("Your OTP is: {0}", otp));
                     return true;
                 }
                 return false;
@@ -100,6 +102,87 @@ namespace API.Repositories
             catch (Exception ex)
             {
                 connect.Close();
+                connect1.Close();
+                return false;
+            }
+        }
+
+        public async Task<bool> Signin(User user, string otp)
+        {
+            MySqlConnection connect = conn.ConnectDB();
+            MySqlConnection connect1 = conn.ConnectDB();
+            MySqlConnection connect2 = conn.ConnectDB();
+            try
+            {
+                connect2.Open();
+                var command2 = new MySqlCommand();
+                command2.Connection = connect2;
+                string queryString2 = "SELECT * FROM tbl_otp WHERE OTP = @otp";
+                command2.Parameters.AddWithValue("@otp", otp);
+                command2.CommandText = queryString2;
+                await using var reader2 = command2.ExecuteReader();
+                DateTime expried = new DateTime(1);
+                if (reader2.HasRows)
+                {
+                    while (reader2.Read())
+                    {
+                        var o = reader2.GetString(0);
+                        expried = reader2.GetDateTime(1);
+                        break;
+                    }
+                }
+                else
+                {
+                    connect.Close();
+                    connect1.Close();
+                    connect2.Close();
+                    return false;
+                }
+                connect2.Close();
+                if (DateTime.UtcNow > expried)
+                {
+                    connect.Close();
+                    connect1.Close();
+                    connect2.Close();
+                    return false;
+                }
+                else
+                {
+                    connect.Open();
+                    MySqlCommand sql = new MySqlCommand();
+                    sql.Connection = connect;
+                    //sql.CommandText = "INSERT INTO tbl_user (Id, Name, PhoneNumber, Email, UserName, Password, Role) VALUES (@Id, @Name, @PhoneNumber, @Email, @UserName, @Password, @Role)";
+                    sql.CommandText = "INSERT INTO tbl_user (Id, Name, PhoneNumber, Email, UserName, Password, Role) SELECT * FROM (SELECT @Id AS Id, @Name AS Name, @PhoneNumber AS PhoneNumber, @Email AS Email, @UserName AS UserName, @Password AS Password, @Role AS Role) AS tmp WHERE NOT EXISTS (SELECT UserName, Email FROM tbl_user WHERE UserName = @UserName OR Email = @Email) LIMIT 1";
+                    sql.Parameters.AddWithValue("@Id", user.Id);
+                    sql.Parameters.AddWithValue("@Name", user.Name);
+                    sql.Parameters.AddWithValue("@PhoneNumber", user.PhoneNumber);
+                    sql.Parameters.AddWithValue("@Email", user.Email);
+                    sql.Parameters.AddWithValue("@UserName", user.UserName);
+                    sql.Parameters.AddWithValue("@Password", user.Password);
+                    sql.Parameters.AddWithValue("@Role", user.Role);
+                    int result = sql.ExecuteNonQuery();
+                    connect.Close();
+                    connect1.Open();
+                    var sql1 = new MySqlCommand();
+                    sql1.Connection = connect1;
+                    string queryString1 = "INSERT INTO tbl_cart(Id, IdUser) VALUES (@Id, @IdUser)";
+                    sql1.Parameters.AddWithValue("@Id", Guid.NewGuid().ToString());
+                    sql1.Parameters.AddWithValue("@IdUser", user.Id);
+                    sql1.CommandText = queryString1;
+                    int result1 = sql1.ExecuteNonQuery();
+                    connect1.Close();
+                    if (result1 == 1 && result == 1)
+                    {
+                        return true;
+                    }
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                connect.Close();
+                connect1.Close();
+                connect2.Close();
                 return false;
             }
         }

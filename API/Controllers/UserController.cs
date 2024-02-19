@@ -33,12 +33,44 @@ namespace API.Controllers
         //    }
         //}
 
-        [HttpPost("Signin")]
-        public IActionResult Signin(User user)
+        [HttpPost("GetOTP")]
+        public IActionResult GetOTP(string email)
         {
             try
             {
-                bool result = _userRepository.Signin(user);
+                bool result = _userRepository.GetOTP(email);
+                if (result)
+                {
+                    return Ok(new APIResponse
+                    {
+                        Success = true,
+                    });
+                }
+                else
+                {
+                    return Accepted(new APIResponse
+                    {
+                        Success = false,
+                        Message = "Can't get OTP"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new APIResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
+
+        [HttpPost("Signin")]
+        public async Task<IActionResult> Signin(User user, string otp)
+        {
+            try
+            {
+                bool result = await _userRepository.Signin(user, otp);
                 if (result)
                 {
                     return Ok(new APIResponse
@@ -52,7 +84,7 @@ namespace API.Controllers
                     return Accepted(new APIResponse
                     {
                         Success = false,
-                        Message = "Available Username or something wrong"
+                        Message = "Available Username, Email or wrong OTP"
                     });
                 }
             }
