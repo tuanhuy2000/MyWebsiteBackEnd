@@ -669,16 +669,11 @@
     ]
   },
   "packageFolders": {
-<<<<<<< HEAD
     "C:\\Users\\truon\\.nuget\\packages\\": {}
-=======
-    "C:\\Users\\Administrator\\.nuget\\packages\\": {}
->>>>>>> ea4f51b999827a316b6099515070c144bca10eba
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-<<<<<<< HEAD
       "projectUniqueName": "E:\\Src\\MyWebsiteBackEnd\\API\\API.csproj",
       "projectName": "API",
       "projectPath": "E:\\Src\\MyWebsiteBackEnd\\API\\API.csproj",
@@ -687,16 +682,6 @@
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\truon\\AppData\\Roaming\\NuGet\\NuGet.Config",
-=======
-      "projectUniqueName": "E:\\Nick\\My-Website\\MyWebsiteBackEnd\\API\\API.csproj",
-      "projectName": "API",
-      "projectPath": "E:\\Nick\\My-Website\\MyWebsiteBackEnd\\API\\API.csproj",
-      "packagesPath": "C:\\Users\\Administrator\\.nuget\\packages\\",
-      "outputPath": "E:\\Nick\\My-Website\\MyWebsiteBackEnd\\API\\obj\\",
-      "projectStyle": "PackageReference",
-      "configFilePaths": [
-        "C:\\Users\\Administrator\\AppData\\Roaming\\NuGet\\NuGet.Config",
->>>>>>> ea4f51b999827a316b6099515070c144bca10eba
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
@@ -716,14 +701,11 @@
         "warnAsError": [
           "NU1605"
         ]
-<<<<<<< HEAD
       },
       "restoreAuditProperties": {
         "enableAudit": "true",
         "auditLevel": "low",
         "auditMode": "direct"
-=======
->>>>>>> ea4f51b999827a316b6099515070c144bca10eba
       }
     },
     "frameworks": {
@@ -762,12 +744,16 @@
             "privateAssets": "all"
           }
         },
-<<<<<<< HEAD
         "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.200\\RuntimeIdentifierGraph.json"
-=======
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.402\\RuntimeIdentifierGraph.json"
->>>>>>> ea4f51b999827a316b6099515070c144bca10eba
       }
     }
-  }
+  },
+  "logs": [
+    {
+      "code": "Undefined",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Problem reading the cache file E:\\Src\\MyWebsiteBackEnd\\API\\obj\\project.nuget.cache : Invalid property identifier character: <. Path 'version', line 3, position 0."
+    }
+  ]
 }
