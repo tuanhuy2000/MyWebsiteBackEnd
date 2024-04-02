@@ -118,6 +118,7 @@ E:\Nick\My-Website\MyWebsiteBackEnd\API\obj\Debug\net6.0\refint\API.dll
 E:\Nick\My-Website\MyWebsiteBackEnd\API\obj\Debug\net6.0\API.pdb
 E:\Nick\My-Website\MyWebsiteBackEnd\API\obj\Debug\net6.0\API.genruntimeconfig.cache
 E:\Nick\My-Website\MyWebsiteBackEnd\API\obj\Debug\net6.0\ref\API.dll
+<<<<<<< HEAD
 E:\Src\MyWebsiteBackEnd\API\bin\Debug\net6.0\appsettings.Development.json
 E:\Src\MyWebsiteBackEnd\API\bin\Debug\net6.0\appsettings.json
 E:\Src\MyWebsiteBackEnd\API\bin\Debug\net6.0\API.exe
@@ -159,3 +160,5 @@ E:\Src\MyWebsiteBackEnd\API\obj\Debug\net6.0\refint\API.dll
 E:\Src\MyWebsiteBackEnd\API\obj\Debug\net6.0\API.pdb
 E:\Src\MyWebsiteBackEnd\API\obj\Debug\net6.0\API.genruntimeconfig.cache
 E:\Src\MyWebsiteBackEnd\API\obj\Debug\net6.0\ref\API.dll
+=======
+>>>>>>> ea4f51b999827a316b6099515070c144bca10eba
