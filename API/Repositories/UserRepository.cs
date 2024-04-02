@@ -18,7 +18,6 @@ namespace API.Repositories
         private readonly DBConnection conn;
         private readonly IConfiguration _configuration;
 
-<<<<<<< HEAD
         private string EncryptPassword(string pass)
         {
             bool useHashing = true;
@@ -69,8 +68,6 @@ namespace API.Repositories
             return UTF8Encoding.UTF8.GetString(resultArray);
         }
 
-=======
->>>>>>> ea4f51b999827a316b6099515070c144bca10eba
         public UserRepository(DBConnection conn, IConfiguration configuration)
         {
             this.conn = conn;
@@ -201,10 +198,7 @@ namespace API.Repositories
                 }
                 else
                 {
-<<<<<<< HEAD
                     string encryptPassword = EncryptPassword(user.Password);
-=======
->>>>>>> ea4f51b999827a316b6099515070c144bca10eba
                     connect.Open();
                     MySqlCommand sql = new MySqlCommand();
                     sql.Connection = connect;
@@ -215,11 +209,7 @@ namespace API.Repositories
                     sql.Parameters.AddWithValue("@PhoneNumber", user.PhoneNumber);
                     sql.Parameters.AddWithValue("@Email", user.Email);
                     sql.Parameters.AddWithValue("@UserName", user.UserName);
-<<<<<<< HEAD
                     sql.Parameters.AddWithValue("@Password", encryptPassword);
-=======
-                    sql.Parameters.AddWithValue("@Password", user.Password);
->>>>>>> ea4f51b999827a316b6099515070c144bca10eba
                     sql.Parameters.AddWithValue("@Role", user.Role);
                     int result = sql.ExecuteNonQuery();
                     connect.Close();
@@ -254,10 +244,7 @@ namespace API.Repositories
             MySqlConnection connect = conn.ConnectDB();
             try
             {
-<<<<<<< HEAD
                 string encryptPassword = EncryptPassword(login.Password);
-=======
->>>>>>> ea4f51b999827a316b6099515070c144bca10eba
                 connect.Open();
 
                 var command = new MySqlCommand();
@@ -265,11 +252,7 @@ namespace API.Repositories
 
                 string queryString = "SELECT * FROM tbl_user WHERE UserName = @username AND Password = @password";
                 command.Parameters.AddWithValue("@username", login.UserName);
-<<<<<<< HEAD
                 command.Parameters.AddWithValue("@password", encryptPassword);
-=======
-                command.Parameters.AddWithValue("@password", login.Password);
->>>>>>> ea4f51b999827a316b6099515070c144bca10eba
                 command.CommandText = queryString;
 
                 await using var reader = command.ExecuteReader();
@@ -733,23 +716,15 @@ namespace API.Repositories
             MySqlConnection connect = conn.ConnectDB();
             try
             {
-<<<<<<< HEAD
                 string encryptPassword = EncryptPassword(password);
                 string encryptNewPassword = EncryptPassword(newPassword);
-=======
->>>>>>> ea4f51b999827a316b6099515070c144bca10eba
                 connect.Open();
                 var sql = new MySqlCommand();
                 sql.Connection = connect;
                 string queryString = "UPDATE tbl_user SET Password = @newPassword WHERE Id = @Id AND Password = @password";
                 sql.Parameters.AddWithValue("@Id", id);
-<<<<<<< HEAD
                 sql.Parameters.AddWithValue("@newPassword", encryptNewPassword);
                 sql.Parameters.AddWithValue("@password", encryptPassword);
-=======
-                sql.Parameters.AddWithValue("@newPassword", newPassword);
-                sql.Parameters.AddWithValue("@password", password);
->>>>>>> ea4f51b999827a316b6099515070c144bca10eba
                 sql.CommandText = queryString;
                 int result = sql.ExecuteNonQuery();
                 connect.Close();
